@@ -14,7 +14,6 @@ fi
 CALENDARS=($(jq -r '.calendars[]' "${CONFIG_FILE}"))
 CALENDAR_LOG_PATH=$(jq -r '.paths.calendar_log' "${CONFIG_FILE}")
 LOG_PATH=$(jq -r '.paths.log' "${CONFIG_FILE}")
-BRIEF_PATH=$(jq -r '.paths.brief' "${CONFIG_FILE}")
 BRIEF_REPO_PATH=$(jq -r '.paths.brief_repo' "${CONFIG_FILE}")
 BRIEF_INPUTS_PATH="${BRIEF_REPO_PATH}/inputs"
 BRIEF_OUTPUTS_PATH="${BRIEF_REPO_PATH}/outputs"
