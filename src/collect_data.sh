@@ -1,5 +1,7 @@
+#!/bin/bash
+
 # calendar command: calme agenda
-alias calme=gcalcli --calendar "Personal/Social" --calendar "abuzarmahmood@gmail.com" --calendar "abuzarmahmood@brandeis.edu" --calendar "Course Timetable"
+alias calme='gcalcli --calendar "Personal/Social" --calendar "abuzarmahmood@gmail.com" --calendar "abuzarmahmood@brandeis.edu" --calendar "Course Timetable"'
 
 # New dedicated path for calendar logs
 CALENDAR_LOG_PATH="/home/abuzarmahmood/Desktop/calendar_log"
