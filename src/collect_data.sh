@@ -6,15 +6,22 @@ alias calme='gcalcli --calendar "Personal/Social" --calendar "abuzarmahmood@gmai
 # New dedicated path for calendar logs
 CALENDAR_LOG_PATH="/home/abuzarmahmood/Desktop/calendar_log"
 LOG_PATH=/home/abuzarmahmood/Desktop/abu_log
+BRIEF_PATH=/home/abuzarmahmood/Desktop/brief_log
+BRIEF_INPUTS_PATH=/home/abuzarmahmood/Desktop/brief_inputs
+BRIEF_OUTPUTS_PATH=/home/abuzarmahmood/Desktop/brief_outputs
 
 # Create log directories if they don't exist
-mkdir -p "${LOG_PATH}"
 mkdir -p "${CALENDAR_LOG_PATH}"
+mkdir -p "${BRIEF_INPUTS_PATH}"
+mkdir -p "${BRIEF_OUTPUTS_PATH}"
 
+## Collect calendar data and save to daily log file
 # Get current date for logging and filename
 CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
 TODAY=$(date +"%Y-%m-%d")
 CALENDAR_LOG_FILE="${CALENDAR_LOG_PATH}/calendar_${TODAY}.log"
+BRIEF_INPUT_FILE="${BRIEF_INPUTS_PATH}/brief_input_${TODAY}.txt"
+BRIEF_OUTPUT_FILE="${BRIEF_OUTPUTS_PATH}/brief_output_${TODAY}.txt"
 
 # Run the calendar command and save output to daily log file
 echo "=== Calendar data collected on ${CURRENT_DATE} ===" > "${CALENDAR_LOG_FILE}"
@@ -23,18 +30,15 @@ echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
 
 echo "Calendar data collected and saved to ${CALENDAR_LOG_FILE}"
 
+## Collect regular log data 
 # Update regular log from git repository
 echo "Updating regular log from git repository..."
 cd "${LOG_PATH}" || { echo "Error: Could not change to log directory ${LOG_PATH}"; exit 1; }
 git pull origin master
 
-# Collect data from regular log
-echo "=== Regular log data collected on ${CURRENT_DATE} ===" >> "${CALENDAR_LOG_FILE}"
-if [ -f "${LOG_PATH}/log.txt" ]; then
-    cat "${LOG_PATH}/log.txt" >> "${CALENDAR_LOG_FILE}"
-else
-    echo "No regular log file found at ${LOG_PATH}/log.txt" >> "${CALENDAR_LOG_FILE}"
-fi
-echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
-
-echo "Regular log data collected and appended to ${CALENDAR_LOG_FILE}"
+# Append calendar and jrnl data to brief input file
+DATE_LAST_WEEK=$(date -d "7 days ago" +"%Y-%m-%d") 
+jrnl -from $DATE_LAST_WEEK --format md > "${BRIEF_INPUT_FILE}" 
+echo "" >> "${BRIEF_INPUT_FILE}"  # Add empty line for readability
+echo "Calendar data:" >> "${BRIEF_INPUT_FILE}"
+cat "${CALENDAR_LOG_FILE}" >> "${BRIEF_INPUT_FILE}"
