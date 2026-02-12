@@ -48,6 +48,9 @@ cat "${CALENDAR_LOG_FILE}" >> "${BRIEF_INPUT_FILE}"
 echo "Brief input file created at ${BRIEF_INPUT_FILE}"
 echo "Combined journal and calendar data ready for processing"
 
+# Create empty brief output file
+touch "${BRIEF_OUTPUT_FILE}"
+
 # Generate daily brief using aider
 echo "Generating daily brief with aider..."
 aider --message "Based on the provided journal entries and calendar data, please generate a concise daily brief and gameplan for today (${TODAY}). 
@@ -59,10 +62,10 @@ Instructions:
 - Include relevant context from recent journal entries
 - Format as a clear, organized brief suitable for daily planning
 
-Please save the output as a well-formatted daily brief." --yes "${BRIEF_INPUT_FILE}" > "${BRIEF_OUTPUT_FILE}" 2>&1
+Please populate the brief output file with a well-formatted daily brief." --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 
 if [ $? -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
 else
-    echo "Error generating daily brief. Check ${BRIEF_OUTPUT_FILE} for details."
+    echo "Error generating daily brief. Check aider output for details."
 fi
