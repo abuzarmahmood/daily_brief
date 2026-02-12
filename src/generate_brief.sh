@@ -53,6 +53,7 @@ fi
 CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
 TODAY=$(date +"%Y-%m-%d")
 TOMORROW=$(date -d "tomorrow" +"%Y-%m-%d")
+NEXT_WEEK=$(date -d "+7 days" +"%Y-%m-%d")
 DATE_TWO_WEEKS_AGO=$(date -d "14 days ago" +"%Y-%m-%d")
 YEAR=$(date +"%Y")
 MONTH=$(date +"%m")
@@ -68,7 +69,7 @@ BRIEF_OUTPUT_FILE="${BRIEF_OUTPUT_DIR}/${DAY}.md"
 
 # Run the calendar command and save output to daily log file
 echo "=== Calendar data collected on ${CURRENT_DATE} ===" > "${CALENDAR_LOG_FILE}"
-eval "gcalcli ${CALENDAR_ARGS} agenda $DATE_TWO_WEEKS_AGO $TOMORROW" >> "${CALENDAR_LOG_FILE}" 2>&1
+eval "gcalcli ${CALENDAR_ARGS} agenda $DATE_TWO_WEEKS_AGO $NEXT_WEEK" >> "${CALENDAR_LOG_FILE}" 2>&1
 echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
 
 echo "Calendar data collected and saved to ${CALENDAR_LOG_FILE}"
@@ -97,13 +98,14 @@ echo "Generating daily brief with aider..."
 aider --message "Based on the provided journal entries and calendar data, please generate a concise daily brief and gameplan for today (${TODAY}). 
 
 Instructions:
-- The calendar output covers the past 2 weeks through tomorrow
+- The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK})
 - Mark any recurring events scheduled for today as 'recurring' in the brief
 - Focus on actionable items and priorities for today
 - Include relevant context from recent journal entries
+- Also provide a brief overview of upcoming events in the next 7 days
 - Format as GitHub markdown with proper headers, bullet points, and sections
 - Use markdown formatting like ## for headers, - for bullet points, **bold** for emphasis
-- Structure with clear sections like ## Today's Schedule, ## Action Items, ## Notes, etc.
+- Structure with clear sections like ## Today's Schedule, ## Upcoming Events (Next 7 Days), ## Action Items, ## Notes, etc.
 - Make it visually appealing and easy to read in markdown viewers
 
 Please populate the brief output file with a well-formatted GitHub markdown daily brief." --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
