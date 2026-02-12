@@ -20,14 +20,14 @@ mkdir -p "${BRIEF_OUTPUTS_PATH}"
 CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
 TODAY=$(date +"%Y-%m-%d")
 TOMORROW=$(date -d "tomorrow" +"%Y-%m-%d")
-DATE_LAST_WEEK=$(date -d "7 days ago" +"%Y-%m-%d") 
+DATE_TWO_WEEKS_AGO=$(date -d "14 days ago" +"%Y-%m-%d") 
 CALENDAR_LOG_FILE="${CALENDAR_LOG_PATH}/calendar_${TODAY}.log"
 BRIEF_INPUT_FILE="${BRIEF_INPUTS_PATH}/brief_input_${TODAY}.txt"
 BRIEF_OUTPUT_FILE="${BRIEF_OUTPUTS_PATH}/brief_output_${TODAY}.txt"
 
 # Run the calendar command and save output to daily log file
 echo "=== Calendar data collected on ${CURRENT_DATE} ===" > "${CALENDAR_LOG_FILE}"
-gcalcli --calendar "Personal/Social" --calendar "abuzarmahmood@gmail.com" --calendar "abuzarmahmood@brandeis.edu" --calendar "Course Timetable" agenda $DATE_LAST_WEEK $TOMORROW >> "${CALENDAR_LOG_FILE}" 2>&1
+gcalcli --calendar "Personal/Social" --calendar "abuzarmahmood@gmail.com" --calendar "abuzarmahmood@brandeis.edu" --calendar "Course Timetable" agenda $DATE_TWO_WEEKS_AGO $TOMORROW >> "${CALENDAR_LOG_FILE}" 2>&1
 echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
 
 echo "Calendar data collected and saved to ${CALENDAR_LOG_FILE}"
@@ -39,8 +39,8 @@ cd "${LOG_PATH}" || { echo "Error: Could not change to log directory ${LOG_PATH}
 git pull origin master
 
 # Append calendar and jrnl data to brief input file
-echo "Collecting journal entries from the last week..."
-jrnl -from $DATE_LAST_WEEK --format md > "${BRIEF_INPUT_FILE}" 
+echo "Collecting journal entries from the last two weeks..."
+jrnl -from $DATE_TWO_WEEKS_AGO --format md > "${BRIEF_INPUT_FILE}" 
 echo "" >> "${BRIEF_INPUT_FILE}"  # Add empty line for readability
 echo "Calendar data:" >> "${BRIEF_INPUT_FILE}"
 cat "${CALENDAR_LOG_FILE}" >> "${BRIEF_INPUT_FILE}"
