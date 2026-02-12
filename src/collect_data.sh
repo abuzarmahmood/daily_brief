@@ -32,13 +32,17 @@ echo "Calendar data collected and saved to ${CALENDAR_LOG_FILE}"
 
 ## Collect regular log data 
 # Update regular log from git repository
-echo "Updating regular log from git repository..."
+echo "Updating regular log from git repository at ${LOG_PATH}..."
 cd "${LOG_PATH}" || { echo "Error: Could not change to log directory ${LOG_PATH}"; exit 1; }
 git pull origin master
 
 # Append calendar and jrnl data to brief input file
+echo "Collecting journal entries from the last week..."
 DATE_LAST_WEEK=$(date -d "7 days ago" +"%Y-%m-%d") 
 jrnl -from $DATE_LAST_WEEK --format md > "${BRIEF_INPUT_FILE}" 
 echo "" >> "${BRIEF_INPUT_FILE}"  # Add empty line for readability
 echo "Calendar data:" >> "${BRIEF_INPUT_FILE}"
 cat "${CALENDAR_LOG_FILE}" >> "${BRIEF_INPUT_FILE}"
+
+echo "Brief input file created at ${BRIEF_INPUT_FILE}"
+echo "Combined journal and calendar data ready for processing"
