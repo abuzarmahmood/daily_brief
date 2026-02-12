@@ -1,0 +1,13 @@
+{
+  "calendars": [
+    "Personal/Social",
+    "Course Timetable"
+  ],
+  "paths": {
+    "calendar_log": "/home/Desktop/calendar_log",
+    "log": "/home/Desktop/abu_log",
+    "brief": "/home/Desktop/brief_log",
+    "brief_inputs": "/home/Desktop/brief_inputs",
+    "brief_outputs": "/home/Desktop/brief_outputs"
+  }
+}
