@@ -22,3 +22,19 @@ gcalcli --calendar "Personal/Social" --calendar "abuzarmahmood@gmail.com" --cale
 echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
 
 echo "Calendar data collected and saved to ${CALENDAR_LOG_FILE}"
+
+# Update regular log from git repository
+echo "Updating regular log from git repository..."
+cd "${LOG_PATH}" || { echo "Error: Could not change to log directory ${LOG_PATH}"; exit 1; }
+git pull origin master
+
+# Collect data from regular log
+echo "=== Regular log data collected on ${CURRENT_DATE} ===" >> "${CALENDAR_LOG_FILE}"
+if [ -f "${LOG_PATH}/log.txt" ]; then
+    cat "${LOG_PATH}/log.txt" >> "${CALENDAR_LOG_FILE}"
+else
+    echo "No regular log file found at ${LOG_PATH}/log.txt" >> "${CALENDAR_LOG_FILE}"
+fi
+echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
+
+echo "Regular log data collected and appended to ${CALENDAR_LOG_FILE}"
