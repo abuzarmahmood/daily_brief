@@ -19,13 +19,15 @@ mkdir -p "${BRIEF_OUTPUTS_PATH}"
 # Get current date for logging and filename
 CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
 TODAY=$(date +"%Y-%m-%d")
+TOMORROW=$(date -d "tomorrow" +"%Y-%m-%d")
+DATE_LAST_WEEK=$(date -d "7 days ago" +"%Y-%m-%d") 
 CALENDAR_LOG_FILE="${CALENDAR_LOG_PATH}/calendar_${TODAY}.log"
 BRIEF_INPUT_FILE="${BRIEF_INPUTS_PATH}/brief_input_${TODAY}.txt"
 BRIEF_OUTPUT_FILE="${BRIEF_OUTPUTS_PATH}/brief_output_${TODAY}.txt"
 
 # Run the calendar command and save output to daily log file
 echo "=== Calendar data collected on ${CURRENT_DATE} ===" > "${CALENDAR_LOG_FILE}"
-gcalcli --calendar "Personal/Social" --calendar "abuzarmahmood@gmail.com" --calendar "abuzarmahmood@brandeis.edu" --calendar "Course Timetable" agenda >> "${CALENDAR_LOG_FILE}" 2>&1
+gcalcli --calendar "Personal/Social" --calendar "abuzarmahmood@gmail.com" --calendar "abuzarmahmood@brandeis.edu" --calendar "Course Timetable" agenda $DATE_LAST_WEEK $TOMORROW >> "${CALENDAR_LOG_FILE}" 2>&1
 echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
 
 echo "Calendar data collected and saved to ${CALENDAR_LOG_FILE}"
@@ -38,7 +40,6 @@ git pull origin master
 
 # Append calendar and jrnl data to brief input file
 echo "Collecting journal entries from the last week..."
-DATE_LAST_WEEK=$(date -d "7 days ago" +"%Y-%m-%d") 
 jrnl -from $DATE_LAST_WEEK --format md > "${BRIEF_INPUT_FILE}" 
 echo "" >> "${BRIEF_INPUT_FILE}"  # Add empty line for readability
 echo "Calendar data:" >> "${BRIEF_INPUT_FILE}"
