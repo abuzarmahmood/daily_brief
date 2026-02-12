@@ -37,10 +37,18 @@ mkdir -p "${BRIEF_OUTPUTS_PATH}"
 CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
 TODAY=$(date +"%Y-%m-%d")
 TOMORROW=$(date -d "tomorrow" +"%Y-%m-%d")
-DATE_TWO_WEEKS_AGO=$(date -d "14 days ago" +"%Y-%m-%d") 
+DATE_TWO_WEEKS_AGO=$(date -d "14 days ago" +"%Y-%m-%d")
+YEAR=$(date +"%Y")
+MONTH=$(date +"%m")
+DAY=$(date +"%d")
+
+# Create hierarchical directory structure for brief outputs
+BRIEF_OUTPUT_DIR="${BRIEF_OUTPUTS_PATH}/${YEAR}/${MONTH}"
+mkdir -p "${BRIEF_OUTPUT_DIR}"
+
 CALENDAR_LOG_FILE="${CALENDAR_LOG_PATH}/calendar_${TODAY}.log"
 BRIEF_INPUT_FILE="${BRIEF_INPUTS_PATH}/brief_input_${TODAY}.txt"
-BRIEF_OUTPUT_FILE="${BRIEF_OUTPUTS_PATH}/brief_output_${TODAY}.md"
+BRIEF_OUTPUT_FILE="${BRIEF_OUTPUT_DIR}/${DAY}.md"
 
 # Run the calendar command and save output to daily log file
 echo "=== Calendar data collected on ${CURRENT_DATE} ===" > "${CALENDAR_LOG_FILE}"
