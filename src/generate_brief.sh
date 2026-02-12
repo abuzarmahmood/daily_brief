@@ -40,7 +40,7 @@ TOMORROW=$(date -d "tomorrow" +"%Y-%m-%d")
 DATE_TWO_WEEKS_AGO=$(date -d "14 days ago" +"%Y-%m-%d") 
 CALENDAR_LOG_FILE="${CALENDAR_LOG_PATH}/calendar_${TODAY}.log"
 BRIEF_INPUT_FILE="${BRIEF_INPUTS_PATH}/brief_input_${TODAY}.txt"
-BRIEF_OUTPUT_FILE="${BRIEF_OUTPUTS_PATH}/brief_output_${TODAY}.txt"
+BRIEF_OUTPUT_FILE="${BRIEF_OUTPUTS_PATH}/brief_output_${TODAY}.md"
 
 # Run the calendar command and save output to daily log file
 echo "=== Calendar data collected on ${CURRENT_DATE} ===" > "${CALENDAR_LOG_FILE}"
@@ -77,9 +77,12 @@ Instructions:
 - Mark any recurring events scheduled for today as 'recurring' in the brief
 - Focus on actionable items and priorities for today
 - Include relevant context from recent journal entries
-- Format as a clear, organized brief suitable for daily planning
+- Format as GitHub markdown with proper headers, bullet points, and sections
+- Use markdown formatting like ## for headers, - for bullet points, **bold** for emphasis
+- Structure with clear sections like ## Today's Schedule, ## Action Items, ## Notes, etc.
+- Make it visually appealing and easy to read in markdown viewers
 
-Please populate the brief output file with a well-formatted daily brief." --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+Please populate the brief output file with a well-formatted GitHub markdown daily brief." --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 
 if [ $? -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
