@@ -15,8 +15,9 @@ CALENDARS=($(jq -r '.calendars[]' "${CONFIG_FILE}"))
 CALENDAR_LOG_PATH=$(jq -r '.paths.calendar_log' "${CONFIG_FILE}")
 LOG_PATH=$(jq -r '.paths.log' "${CONFIG_FILE}")
 BRIEF_PATH=$(jq -r '.paths.brief' "${CONFIG_FILE}")
-BRIEF_INPUTS_PATH=$(jq -r '.paths.brief_inputs' "${CONFIG_FILE}")
-BRIEF_OUTPUTS_PATH=$(jq -r '.paths.brief_outputs' "${CONFIG_FILE}")
+BRIEF_REPO_PATH=$(jq -r '.paths.brief_repo' "${CONFIG_FILE}")
+BRIEF_INPUTS_PATH="${BRIEF_REPO_PATH}/inputs"
+BRIEF_OUTPUTS_PATH="${BRIEF_REPO_PATH}/outputs"
 
 # Build calendar command arguments
 CALENDAR_ARGS=""
@@ -31,6 +32,22 @@ alias calme="gcalcli ${CALENDAR_ARGS}"
 mkdir -p "${CALENDAR_LOG_PATH}"
 mkdir -p "${BRIEF_INPUTS_PATH}"
 mkdir -p "${BRIEF_OUTPUTS_PATH}"
+
+# Initialize git repository in brief repo if it doesn't exist
+if [ ! -d "${BRIEF_REPO_PATH}/.git" ]; then
+    echo "Initializing git repository in ${BRIEF_REPO_PATH}..."
+    cd "${BRIEF_REPO_PATH}" || { echo "Error: Could not change to brief repo directory ${BRIEF_REPO_PATH}"; exit 1; }
+    git init
+    echo "# Daily Brief Repository" > README.md
+    echo "" >> README.md
+    echo "This repository contains daily brief inputs and outputs organized by date." >> README.md
+    echo "" >> README.md
+    echo "## Structure" >> README.md
+    echo "- \`inputs/\` - Raw journal and calendar data used to generate briefs" >> README.md
+    echo "- \`outputs/\` - Generated daily briefs in markdown format" >> README.md
+    git add README.md
+    git commit -m "Initial commit: Add README"
+fi
 
 ## Collect calendar data and save to daily log file
 # Get current date for logging and filename
@@ -94,6 +111,24 @@ Please populate the brief output file with a well-formatted GitHub markdown dail
 
 if [ $? -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
+    
+    # Commit and push the generated brief to GitHub
+    echo "Committing and pushing brief to GitHub..."
+    cd "${BRIEF_REPO_PATH}" || { echo "Error: Could not change to brief repo directory ${BRIEF_REPO_PATH}"; exit 1; }
+    
+    # Add the new files to git
+    git add inputs/ outputs/
+    
+    # Commit with a descriptive message
+    git commit -m "Add daily brief for ${TODAY}"
+    
+    # Push to GitHub (assumes remote origin is set up)
+    if git push origin main 2>/dev/null || git push origin master 2>/dev/null; then
+        echo "Successfully pushed daily brief to GitHub"
+    else
+        echo "Warning: Could not push to GitHub. Make sure remote origin is configured."
+        echo "You can manually push later with: cd ${BRIEF_REPO_PATH} && git push origin main"
+    fi
 else
     echo "Error generating daily brief. Check aider output for details."
 fi
