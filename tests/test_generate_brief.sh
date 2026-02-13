@@ -60,6 +60,61 @@ test_aider_message_upcoming_section() {
     fi
 }
 
+# Test 6: Verify YESTERDAY variable is defined
+test_yesterday_defined() {
+    if grep -q 'YESTERDAY=$(date -d "yesterday"' "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 6 PASSED: YESTERDAY variable is defined"
+        return 0
+    else
+        echo "✗ Test 6 FAILED: YESTERDAY variable is not defined"
+        return 1
+    fi
+}
+
+# Test 7: Verify yesterday's brief file is read
+test_yesterday_brief_read() {
+    if grep -q 'YESTERDAY_BRIEF_FILE=' "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 7 PASSED: Yesterday's brief file path is constructed"
+        return 0
+    else
+        echo "✗ Test 7 FAILED: Yesterday's brief file path is not constructed"
+        return 1
+    fi
+}
+
+# Test 8: Verify yesterday's brief is appended to input file
+test_yesterday_brief_appended() {
+    if grep -q "cat.*YESTERDAY_BRIEF_FILE" "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 8 PASSED: Yesterday's brief is appended to input"
+        return 0
+    else
+        echo "✗ Test 8 FAILED: Yesterday's brief is not appended to input"
+        return 1
+    fi
+}
+
+# Test 9: Verify aider message includes incomplete items instruction
+test_aider_message_incomplete_items() {
+    if grep -q "incomplete items from yesterday's brief" "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 9 PASSED: Aider message includes incomplete items instruction"
+        return 0
+    else
+        echo "✗ Test 9 FAILED: Aider message does not include incomplete items instruction"
+        return 1
+    fi
+}
+
+# Test 10: Verify aider message mentions considering yesterday's brief
+test_aider_message_consider_yesterday() {
+    if grep -q "Also consider yesterday's brief" "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 10 PASSED: Aider message mentions considering yesterday's brief"
+        return 0
+    else
+        echo "✗ Test 10 FAILED: Aider message does not mention considering yesterday's brief"
+        return 1
+    fi
+}
+
 # Run all tests
 echo "Running tests for generate_brief.sh changes..."
 echo ""
@@ -71,6 +126,11 @@ test_calendar_uses_next_week || FAILED=1
 test_aider_message_upcoming_events || FAILED=1
 test_aider_message_includes_next_week || FAILED=1
 test_aider_message_upcoming_section || FAILED=1
+test_yesterday_defined || FAILED=1
+test_yesterday_brief_read || FAILED=1
+test_yesterday_brief_appended || FAILED=1
+test_aider_message_incomplete_items || FAILED=1
+test_aider_message_consider_yesterday || FAILED=1
 
 echo ""
 if [ $FAILED -eq 0 ]; then
