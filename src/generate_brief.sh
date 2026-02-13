@@ -53,6 +53,7 @@ fi
 CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
 TODAY=$(date +"%Y-%m-%d")
 TOMORROW=$(date -d "tomorrow" +"%Y-%m-%d")
+YESTERDAY=$(date -d "yesterday" +"%Y-%m-%d")
 NEXT_WEEK=$(date -d "+7 days" +"%Y-%m-%d")
 DATE_TWO_WEEKS_AGO=$(date -d "14 days ago" +"%Y-%m-%d")
 YEAR=$(date +"%Y")
@@ -90,19 +91,38 @@ cat "${CALENDAR_LOG_FILE}" >> "${BRIEF_INPUT_FILE}"
 echo "Brief input file created at ${BRIEF_INPUT_FILE}"
 echo "Combined journal and calendar data ready for processing"
 
+# Find yesterday's brief file to include in aider input
+YESTERDAY_YEAR=$(date -d "yesterday" +"%Y")
+YESTERDAY_MONTH=$(date -d "yesterday" +"%m")
+YESTERDAY_DAY=$(date -d "yesterday" +"%d")
+YESTERDAY_BRIEF_FILE="${BRIEF_OUTPUTS_PATH}/${YESTERDAY_YEAR}/${YESTERDAY_MONTH}/${YESTERDAY_DAY}.md"
+
+if [ -f "${YESTERDAY_BRIEF_FILE}" ]; then
+    echo "Found yesterday's brief at ${YESTERDAY_BRIEF_FILE}"
+    # Append yesterday's brief content to input for AI to review
+    echo "" >> "${BRIEF_INPUT_FILE}"
+    echo "Yesterday's brief (${YESTERDAY}):" >> "${BRIEF_INPUT_FILE}"
+    cat "${YESTERDAY_BRIEF_FILE}" >> "${BRIEF_INPUT_FILE}"
+    echo "Added yesterday's brief to input for AI review"
+else
+    echo "No brief found from yesterday (${YESTERDAY_BRIEF_FILE}), skipping"
+fi
+
 # Create empty brief output file
 touch "${BRIEF_OUTPUT_FILE}"
 
 # Generate daily brief using aider
 echo "Generating daily brief with aider..."
-aider --message "Based on the provided journal entries and calendar data, please generate a concise daily brief and gameplan for today (${TODAY}). 
+aider --message "Based on the provided journal entries, calendar data, and yesterday's incomplete items, please generate a concise daily brief and gameplan for today (${TODAY}). 
 
 Instructions:
 - The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK})
+- Also consider yesterday's brief (${YESTERDAY}) when generating today's brief - review any incomplete items listed below and incorporate them into today's action items
 - Mark any recurring events scheduled for today as 'recurring' in the brief
 - Focus on actionable items and priorities for today
 - Include relevant context from recent journal entries
 - Also provide a brief overview of upcoming events in the next 7 days
+- Include any incomplete items from yesterday's brief in today's Action Items section, clearly marking them as carryover from yesterday
 - Format as GitHub markdown with proper headers, bullet points, and sections
 - Use markdown formatting like ## for headers, - for bullet points, **bold** for emphasis
 - Structure with clear sections like ## Today's Schedule, ## Upcoming Events (Next 7 Days), ## Action Items, ## Notes, etc.
