@@ -1,0 +1,11 @@
+# System Dependencies
+# The following tools are required to run the daily brief generator:
+
+# Core CLI tools
+jq          # JSON parser for reading config.json
+gcalcli     # Google Calendar CLI
+jrnl        # Journal CLI tool
+git         # Version control (usually pre-installed on most systems)
+
+# AI Assistant
+aider       # AI assistant for generating daily briefs
