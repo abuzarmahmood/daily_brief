@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Print current date and time
+echo "Script started at: $(date '+%Y-%m-%d %H:%M:%S')"
+echo ""
+
 # Get script directory to find config file
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${SCRIPT_DIR}/../config.json"
