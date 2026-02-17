@@ -115,6 +115,19 @@ test_aider_message_consider_yesterday() {
     fi
 }
 
+# Test 11: Verify brief repository is updated with git pull
+test_brief_repo_git_pull() {
+    if grep -q "git pull origin" "$GENERATE_BRIEF_SCRIPT" && grep -q "BRIEF_REPO_PATH" "$GENERATE_BRIEF_SCRIPT"; then
+        # Make sure it's specifically for the brief repo, not just the log repo
+        if grep -q "Updating brief repository" "$GENERATE_BRIEF_SCRIPT"; then
+            echo "✓ Test 11 PASSED: Brief repository is updated with git pull"
+            return 0
+        fi
+    fi
+    echo "✗ Test 11 FAILED: Brief repository git pull is not implemented"
+    return 1
+}
+
 # Run all tests
 echo "Running tests for generate_brief.sh changes..."
 echo ""
@@ -131,6 +144,7 @@ test_yesterday_brief_read || FAILED=1
 test_yesterday_brief_appended || FAILED=1
 test_aider_message_incomplete_items || FAILED=1
 test_aider_message_consider_yesterday || FAILED=1
+test_brief_repo_git_pull || FAILED=1
 
 echo ""
 if [ $FAILED -eq 0 ]; then
