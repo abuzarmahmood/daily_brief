@@ -32,6 +32,13 @@ mkdir -p "${CALENDAR_LOG_PATH}"
 mkdir -p "${BRIEF_INPUTS_PATH}"
 mkdir -p "${BRIEF_OUTPUTS_PATH}"
 
+# Update brief repository to ensure latest version is present
+if [ -d "${BRIEF_REPO_PATH}/.git" ]; then
+    echo "Updating brief repository at ${BRIEF_REPO_PATH}..."
+    cd "${BRIEF_REPO_PATH}" || { echo "Error: Could not change to brief repo directory ${BRIEF_REPO_PATH}"; exit 1; }
+    git pull origin main 2>/dev/null || git pull origin master 2>/dev/null || echo "No remote to pull from or pull failed, continuing..."
+fi
+
 # Initialize git repository in brief repo if it doesn't exist
 if [ ! -d "${BRIEF_REPO_PATH}/.git" ]; then
     echo "Initializing git repository in ${BRIEF_REPO_PATH}..."
