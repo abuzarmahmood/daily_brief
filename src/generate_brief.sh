@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# Parse command line arguments
+USER_MESSAGE=""
+while getopts "m:" opt; do
+    case $opt in
+        m)
+            USER_MESSAGE="$OPTARG"
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            echo "Usage: $0 [-m \"additional message for aider\"]"
+            exit 1
+            ;;
+    esac
+done
+
 # Print current date and time
 echo "Script started at: $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
@@ -124,7 +139,9 @@ touch "${BRIEF_OUTPUT_FILE}"
 
 # Generate daily brief using aider
 echo "Generating daily brief with aider..."
-aider --message "Based on the provided journal entries, calendar data, and yesterday's incomplete items, please generate a concise daily brief and gameplan for today (${TODAY}). 
+
+# Build the aider message
+AIDER_MESSAGE="Based on the provided journal entries, calendar data, and yesterday's incomplete items, please generate a concise daily brief and gameplan for today (${TODAY}). 
 
 Instructions:
 - The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK})
@@ -139,7 +156,18 @@ Instructions:
 - Structure with clear sections like ## Today's Schedule, ## Upcoming Events (Next 7 Days), ## Action Items, ## Notes, etc.
 - Make it visually appealing and easy to read in markdown viewers
 
-Please populate the brief output file with a well-formatted GitHub markdown daily brief." --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+Please populate the brief output file with a well-formatted GitHub markdown daily brief."
+
+# Append user message if provided
+if [ -n "${USER_MESSAGE}" ]; then
+    echo "Adding user-provided context to aider prompt..."
+    AIDER_MESSAGE="${AIDER_MESSAGE}
+
+Additional context from user:
+${USER_MESSAGE}"
+fi
+
+aider --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 
 if [ $? -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
