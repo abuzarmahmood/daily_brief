@@ -145,16 +145,14 @@ AIDER_MESSAGE="Based on the provided journal entries, calendar data, and yesterd
 
 Instructions:
 - The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK})
-- Also consider yesterday's brief (${YESTERDAY}) when generating today's brief - review any incomplete items listed below and incorporate them into today's action items
+- Review yesterday's brief (${YESTERDAY}) and carry over any incomplete items to today's Action Items section, clearly marking them as carryover
 - Mark any recurring events scheduled for today as 'recurring' in the brief
 - Focus on actionable items and priorities for today
 - Include relevant context from recent journal entries
-- Also provide a brief overview of upcoming events in the next 7 days
-- Include any incomplete items from yesterday's brief in today's Action Items section, clearly marking them as carryover from yesterday
-- Format as GitHub markdown with proper headers, bullet points, and sections
-- Use markdown formatting like ## for headers, - for bullet points, **bold** for emphasis
-- Structure with clear sections like ## Today's Schedule, ## Upcoming Events (Next 7 Days), ## Action Items, ## Notes, etc.
-- Make it visually appealing and easy to read in markdown viewers
+- Provide a brief overview of upcoming events in the next 7 days
+- Format as GitHub markdown with sections like ## Today's Schedule, ## Upcoming Events (Next 7 Days), ## Action Items, ## Notes
+- Use ## for headers, - for bullet points, **bold** for emphasis
+- Make it visually appealing and easy to read
 
 Please populate the brief output file with a well-formatted GitHub markdown daily brief."
 
