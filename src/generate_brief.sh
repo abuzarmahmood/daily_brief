@@ -165,7 +165,14 @@ Additional context from user:
 ${USER_MESSAGE}"
 fi
 
-aider --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+# Try to use ollama model first, fall back to default if it fails
+echo "Attempting to use ollama_chat/llama3.1:8b model..."
+aider --model ollama_chat/llama3.1:8b --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+
+if [ $? -ne 0 ]; then
+    echo "Ollama model failed or unavailable, falling back to default model..."
+    aider --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+fi
 
 if [ $? -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
