@@ -166,6 +166,7 @@ ${USER_MESSAGE}"
 fi
 
 # Try to use ollama model first, fall back to default if it fails
+# REF: https://aider.chat/docs/llms/ollama.html
 echo "Attempting to use ollama_chat/llama3.1:8b model..."
 aider --model ollama_chat/llama3.1:8b --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 
