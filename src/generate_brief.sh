@@ -36,6 +36,7 @@ LOG_PATH=$(jq -r '.paths.log' "${CONFIG_FILE}")
 BRIEF_REPO_PATH=$(jq -r '.paths.brief_repo' "${CONFIG_FILE}")
 BRIEF_INPUTS_PATH="${BRIEF_REPO_PATH}/inputs"
 BRIEF_OUTPUTS_PATH="${BRIEF_REPO_PATH}/outputs"
+AIDER_MODEL=$(jq -r '.aider.model' "${CONFIG_FILE}")
 
 # Build calendar command arguments
 CALENDAR_ARGS=""
@@ -165,14 +166,13 @@ Additional context from user:
 ${USER_MESSAGE}"
 fi
 
-# Try to use ollama model first, fall back to default if it fails
-# REF: https://aider.chat/docs/llms/ollama.html
-echo "Attempting to use ollama_chat/llama3.1:8b model..."
-aider --model ollama_chat/llama3.1:8b --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
-
-if [ $? -ne 0 ]; then
-    echo "Ollama model failed or unavailable, falling back to default model..."
+# Use configured model or aider's default
+if [ "${AIDER_MODEL}" = "default" ]; then
+    echo "Using aider's default model..."
     aider --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+else
+    echo "Using configured model: ${AIDER_MODEL}..."
+    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 fi
 
 if [ $? -eq 0 ]; then

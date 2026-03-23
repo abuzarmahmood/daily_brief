@@ -9,5 +9,8 @@
     "calendar_log": "/home/abuzarmahmood/Desktop/calendar_log",
     "log": "/home/abuzarmahmood/Desktop/abu_log",
     "brief_repo": "/home/abuzarmahmood/Desktop/brief_log"
+  },
+  "aider": {
+    "model": "default"
   }
 }
