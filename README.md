@@ -82,3 +82,36 @@ git remote add origin https://github.com/yourusername/your-repo.git
 
 ## Configuration
 Personal information and paths are stored in `config.json` (not committed to repo).
+
+### config.json Structure
+```json
+{
+  "calendars": [
+    "Calendar Name 1",
+    "Calendar Name 2"
+  ],
+  "paths": {
+    "calendar_log": "/path/to/calendar/logs",
+    "log": "/path/to/todo/log/repo",
+    "brief_repo": "/path/to/brief/repo"
+  },
+  "aider": {
+    "model": "default"
+  }
+}
+```
+
+### AI Model Configuration
+The `aider.model` setting controls which AI model is used to generate daily briefs:
+- Set to `"default"` to use aider's default model
+- Set to a specific model name (e.g., `"gpt-4"`, `"claude-3-opus-20240229"`, `"gpt-3.5-turbo"`) to use that model
+- See [aider's model documentation](https://aider.chat/docs/llms.html) for available models and configuration
+
+Example with specific model:
+```json
+{
+  "aider": {
+    "model": "gpt-4"
+  }
+}
+```
