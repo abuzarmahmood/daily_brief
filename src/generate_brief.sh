@@ -97,7 +97,7 @@ BRIEF_OUTPUT_FILE="${BRIEF_OUTPUT_DIR}/${DAY}.md"
 
 # Run the calendar command and save output to daily log file
 echo "=== Calendar data collected on ${CURRENT_DATE} ===" > "${CALENDAR_LOG_FILE}"
-eval "gcalcli ${CALENDAR_ARGS} agenda $DATE_TWO_WEEKS_AGO $NEXT_WEEK" >> "${CALENDAR_LOG_FILE}" 2>&1
+eval "gcalcli ${CALENDAR_ARGS} agenda $DATE_TWO_WEEKS_AGO $NEXT_WEEK --details description" >> "${CALENDAR_LOG_FILE}" 2>&1
 echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
 
 echo "Calendar data collected and saved to ${CALENDAR_LOG_FILE}"
