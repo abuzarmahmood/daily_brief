@@ -146,6 +146,7 @@ AIDER_MESSAGE="Based on the provided journal entries, calendar data, and yesterd
 
 Instructions:
 - The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK})
+- **IMPORTANT: Focus on the LATEST calendar data as it reflects the most recent changes and updates to scheduled events**
 - Review yesterday's brief (${YESTERDAY}) and carry over any incomplete items to today's Action Items section, clearly marking them as carryover
 - Mark any recurring events scheduled for today as 'recurring' in the brief
 - Focus on actionable items and priorities for today
