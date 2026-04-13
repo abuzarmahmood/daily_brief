@@ -79,6 +79,7 @@ fi
 # Get current date for logging and filename
 CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
 TODAY=$(date +"%Y-%m-%d")
+TODAY_DAY_NAME=$(date +"%A")
 TOMORROW=$(date -d "tomorrow" +"%Y-%m-%d")
 YESTERDAY=$(date -d "yesterday" +"%Y-%m-%d")
 NEXT_WEEK=$(date -d "+7 days" +"%Y-%m-%d")
@@ -142,7 +143,7 @@ touch "${BRIEF_OUTPUT_FILE}"
 echo "Generating daily brief with aider..."
 
 # Build the aider message
-AIDER_MESSAGE="Based on the provided journal entries, calendar data, and yesterday's incomplete items, please generate a concise daily brief and gameplan for today (${TODAY}). 
+AIDER_MESSAGE="Based on the provided journal entries, calendar data, and yesterday's incomplete items, please generate a concise daily brief and gameplan for today (${TODAY_DAY_NAME}, ${TODAY}). 
 
 Instructions:
 - The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK})
