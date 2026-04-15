@@ -153,6 +153,7 @@ Instructions:
 - Focus on actionable items and priorities for today
 - Include relevant context from recent journal entries
 - Provide a brief overview of upcoming events in the next 7 days
+- **Keep the brief concise and to the point** - avoid unnecessary details or verbosity
 - Format as GitHub markdown with sections like ## Today's Schedule, ## Upcoming Events (Next 7 Days), ## Action Items, ## Notes
 - Use ## for headers, - for bullet points, **bold** for emphasis
 - Make it visually appealing and easy to read
