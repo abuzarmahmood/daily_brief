@@ -7,9 +7,9 @@ The daily brief should be formatted as GitHub markdown with the following sectio
 - **# Short scale**
   - **## Upcoming Deadlines** - Table with columns for deadline name, due date, days left, and priority level
   - **## Today's Schedule** - Events and appointments scheduled for today
+  - **## Action Items** - Tasks and priorities for today, including carryover items from yesterday
 - **# Long scale**
   - **## Upcoming Events (Next 7 Days)** - Preview of events in the coming week
-  - **## Action Items** - Tasks and priorities for today, including carryover items from yesterday
   - **## Ongoing Administrative Tasks** - Regular tasks that need attention but are not time-sensitive
 - **# Review and Context**
     - **## Recent Events (Past 2 Weeks)** - Summary of significant events from the past two weeks
