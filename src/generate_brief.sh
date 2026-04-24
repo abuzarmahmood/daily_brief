@@ -139,26 +139,20 @@ fi
 # Create empty brief output file
 touch "${BRIEF_OUTPUT_FILE}"
 
+# Get path to STYLE.md
+STYLE_FILE="${SCRIPT_DIR}/../STYLE.md"
+
 # Generate daily brief using aider
 echo "Generating daily brief with aider..."
 
 # Build the aider message
 AIDER_MESSAGE="Based on the provided journal entries, calendar data, and yesterday's incomplete items, please generate a concise daily brief and gameplan for today (${TODAY_DAY_NAME}, ${TODAY}). 
 
-Instructions:
-- The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK})
-- **IMPORTANT: Focus on the LATEST calendar data as it reflects the most recent changes and updates to scheduled events**
-- Review yesterday's brief (${YESTERDAY}) and carry over any incomplete items to today's Action Items section, clearly marking them as carryover
-- Mark any recurring events scheduled for today as 'recurring' in the brief
-- Focus on actionable items and priorities for today
-- Include relevant context from recent journal entries
-- Provide a brief overview of upcoming events in the next 7 days
-- **Keep the brief concise and to the point** - avoid unnecessary details or verbosity
-- Format as GitHub markdown with sections like ## Today's Schedule, ## Upcoming Events (Next 7 Days), ## Action Items, ## Notes
-- Use ## for headers, - for bullet points, **bold** for emphasis
-- Make it visually appealing and easy to read
+The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK}).
 
-Please populate the brief output file with a well-formatted GitHub markdown daily brief."
+Please follow the style guide in STYLE.md for formatting and content guidelines.
+
+Populate the brief output file with a well-formatted GitHub markdown daily brief."
 
 # Append user message if provided
 if [ -n "${USER_MESSAGE}" ]; then
@@ -172,10 +166,10 @@ fi
 # Use configured model or aider's default
 if [ "${AIDER_MODEL}" = "default" ]; then
     echo "Using aider's default model..."
-    aider --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 else
     echo "Using configured model: ${AIDER_MODEL}..."
-    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 fi
 
 if [ $? -eq 0 ]; then
