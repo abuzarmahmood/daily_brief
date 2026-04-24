@@ -4,9 +4,11 @@
 
 The daily brief should be formatted as GitHub markdown with the following sections:
 
+- **## Upcoming Deadlines** - Table with columns for deadline name, due date, days left, and priority level
 - **## Today's Schedule** - Events and appointments scheduled for today
 - **## Upcoming Events (Next 7 Days)** - Preview of events in the coming week
 - **## Action Items** - Tasks and priorities for today, including carryover items from yesterday
+- **## Ongoing Administrative Tasks** - Regular tasks that need attention but are not time-sensitive
 - **## Notes** - Relevant context and observations from recent journal entries
 
 Use `##` for section headers, `-` for bullet points, and `**bold**` for emphasis.
@@ -24,3 +26,5 @@ Use `##` for section headers, `-` for bullet points, and `**bold**` for emphasis
 5. **Include Relevant Context**: Incorporate relevant context from recent journal entries that inform today's priorities.
 
 6. **Make it Readable**: Format the brief to be visually appealing and easy to scan quickly.
+
+7. **Remove / avoid redundant information**: If an event or task is already mentioned in the calendar data, avoid repeating it in the brief unless it is a priority or has additional context that is important to highlight.
