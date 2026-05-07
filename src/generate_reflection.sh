@@ -97,33 +97,19 @@ while [ "$(date -d "${CURRENT_DATE}" +%s)" -le "$(date -d "${END_DATE}" +%s)" ];
     MONTH=$(date -d "${CURRENT_DATE}" +"%m")
     DAY=$(date -d "${CURRENT_DATE}" +"%d")
     
-    # Check for brief input file
-    INPUT_FILE="${BRIEF_INPUTS_PATH}/brief_input_${CURRENT_DATE}.txt"
+    # Check for brief output file
     OUTPUT_FILE="${BRIEF_OUTPUTS_PATH}/${YEAR}/${MONTH}/${DAY}.md"
     
-    if [ -f "${INPUT_FILE}" ] || [ -f "${OUTPUT_FILE}" ]; then
-        echo "Found data for ${CURRENT_DATE}"
-        echo "  Input file exists: $([ -f "${INPUT_FILE}" ] && echo "yes" || echo "no")"
-        echo "  Output file exists: $([ -f "${OUTPUT_FILE}" ] && echo "yes" || echo "no")"
+    if [ -f "${OUTPUT_FILE}" ]; then
+        echo "Found brief for ${CURRENT_DATE}"
         DAYS_FOUND=$((DAYS_FOUND + 1))
         
         echo "=== ${CURRENT_DATE} ===" >> "${REFLECTION_INPUT_FILE}"
         echo "" >> "${REFLECTION_INPUT_FILE}"
         
-        # Add input data if available
-        if [ -f "${INPUT_FILE}" ]; then
-            echo "## Raw Input Data (Journal & Calendar):" >> "${REFLECTION_INPUT_FILE}"
-            cat "${INPUT_FILE}" >> "${REFLECTION_INPUT_FILE}"
-            echo "" >> "${REFLECTION_INPUT_FILE}"
-        fi
-        
-        # Add output brief if available
-        if [ -f "${OUTPUT_FILE}" ]; then
-            echo "## Generated Daily Brief:" >> "${REFLECTION_INPUT_FILE}"
-            cat "${OUTPUT_FILE}" >> "${REFLECTION_INPUT_FILE}"
-            echo "" >> "${REFLECTION_INPUT_FILE}"
-        fi
-        
+        # Add output brief
+        cat "${OUTPUT_FILE}" >> "${REFLECTION_INPUT_FILE}"
+        echo "" >> "${REFLECTION_INPUT_FILE}"
         echo "---" >> "${REFLECTION_INPUT_FILE}"
         echo "" >> "${REFLECTION_INPUT_FILE}"
     fi
@@ -137,11 +123,9 @@ if [ ${DAYS_FOUND} -eq 0 ]; then
     echo "Make sure you have generated daily briefs for dates in this range"
     echo ""
     echo "Searched in:"
-    echo "  Input path: ${BRIEF_INPUTS_PATH}"
     echo "  Output path: ${BRIEF_OUTPUTS_PATH}"
     echo ""
     echo "Looking for files like:"
-    echo "  ${BRIEF_INPUTS_PATH}/brief_input_YYYY-MM-DD.txt"
     echo "  ${BRIEF_OUTPUTS_PATH}/YYYY/MM/DD.md"
 fi
 
@@ -155,10 +139,10 @@ touch "${REFLECTION_OUTPUT_FILE}"
 echo "Generating reflection with aider..."
 
 # Build the aider message
-AIDER_MESSAGE="Based on the provided daily briefs, journal entries, and calendar data from ${START_DATE} to ${END_DATE}, please generate a thoughtful longer-term reflection.
+AIDER_MESSAGE="Based on the provided daily briefs from ${START_DATE} to ${END_DATE}, please generate a thoughtful longer-term reflection.
 
 Instructions:
-- Review all the daily briefs and raw input data from the date range
+- Review all the daily briefs from the date range
 - Identify patterns, themes, and trends across the time period
 - Highlight key accomplishments and progress made
 - Note any recurring challenges or obstacles
