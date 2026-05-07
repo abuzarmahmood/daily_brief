@@ -111,10 +111,29 @@ git pull origin master
 
 # Append calendar and jrnl data to brief input file
 echo "Collecting journal entries from the last two weeks..."
-jrnl -from $DATE_TWO_WEEKS_AGO --format md > "${BRIEF_INPUT_FILE}" 
+if ! command -v jrnl &> /dev/null; then
+    echo "Warning: jrnl command not found. Skipping journal entries."
+    echo "Journal entries not available (jrnl not installed)" > "${BRIEF_INPUT_FILE}"
+else
+    jrnl -from $DATE_TWO_WEEKS_AGO --format md > "${BRIEF_INPUT_FILE}" 2>&1
+    if [ $? -ne 0 ]; then
+        echo "Warning: jrnl command failed. Check jrnl configuration."
+        echo "Journal entries not available (jrnl command failed)" > "${BRIEF_INPUT_FILE}"
+    else
+        echo "Successfully collected journal entries"
+    fi
+fi
+
 echo "" >> "${BRIEF_INPUT_FILE}"  # Add empty line for readability
 echo "Calendar data:" >> "${BRIEF_INPUT_FILE}"
-cat "${CALENDAR_LOG_FILE}" >> "${BRIEF_INPUT_FILE}"
+
+if [ ! -f "${CALENDAR_LOG_FILE}" ]; then
+    echo "Warning: Calendar log file not found at ${CALENDAR_LOG_FILE}"
+    echo "Calendar data not available" >> "${BRIEF_INPUT_FILE}"
+else
+    cat "${CALENDAR_LOG_FILE}" >> "${BRIEF_INPUT_FILE}"
+    echo "Successfully added calendar data"
+fi
 
 echo "Brief input file created at ${BRIEF_INPUT_FILE}"
 echo "Combined journal and calendar data ready for processing"

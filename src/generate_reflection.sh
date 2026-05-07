@@ -103,6 +103,8 @@ while [ "$(date -d "${CURRENT_DATE}" +%s)" -le "$(date -d "${END_DATE}" +%s)" ];
     
     if [ -f "${INPUT_FILE}" ] || [ -f "${OUTPUT_FILE}" ]; then
         echo "Found data for ${CURRENT_DATE}"
+        echo "  Input file exists: $([ -f "${INPUT_FILE}" ] && echo "yes" || echo "no")"
+        echo "  Output file exists: $([ -f "${OUTPUT_FILE}" ] && echo "yes" || echo "no")"
         DAYS_FOUND=$((DAYS_FOUND + 1))
         
         echo "=== ${CURRENT_DATE} ===" >> "${REFLECTION_INPUT_FILE}"
@@ -133,6 +135,14 @@ done
 if [ ${DAYS_FOUND} -eq 0 ]; then
     echo "Warning: No brief data found in the specified date range"
     echo "Make sure you have generated daily briefs for dates in this range"
+    echo ""
+    echo "Searched in:"
+    echo "  Input path: ${BRIEF_INPUTS_PATH}"
+    echo "  Output path: ${BRIEF_OUTPUTS_PATH}"
+    echo ""
+    echo "Looking for files like:"
+    echo "  ${BRIEF_INPUTS_PATH}/brief_input_YYYY-MM-DD.txt"
+    echo "  ${BRIEF_OUTPUTS_PATH}/YYYY/MM/DD.md"
 fi
 
 echo "Collected data from ${DAYS_FOUND} days"
