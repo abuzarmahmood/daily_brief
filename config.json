@@ -11,6 +11,7 @@
     "brief_repo": "/home/abuzarmahmood/Desktop/brief_log"
   },
   "aider": {
-    "model": "default"
+    "brief_model": "sonnet",
+    "summary_model": "haiku"
   }
 }

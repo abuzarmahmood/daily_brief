@@ -106,7 +106,7 @@ Format the output as a well-structured markdown document with:
 Write the complete summary to the output file."""
 
     # Build aider command
-    aider_model = config.get('aider', {}).get('model', 'default')
+    aider_model = config.get('aider', {}).get('summary_model', 'default')
     
     cmd = ['aider', '--message', aider_message, '--yes']
     

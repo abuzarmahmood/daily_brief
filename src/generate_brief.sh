@@ -36,7 +36,7 @@ LOG_PATH=$(jq -r '.paths.log' "${CONFIG_FILE}")
 BRIEF_REPO_PATH=$(jq -r '.paths.brief_repo' "${CONFIG_FILE}")
 BRIEF_INPUTS_PATH="${BRIEF_REPO_PATH}/inputs"
 BRIEF_OUTPUTS_PATH="${BRIEF_REPO_PATH}/outputs"
-AIDER_MODEL=$(jq -r '.aider.model' "${CONFIG_FILE}")
+AIDER_MODEL=$(jq -r '.aider.brief_model' "${CONFIG_FILE}")
 
 # Build calendar command arguments
 CALENDAR_ARGS=""
