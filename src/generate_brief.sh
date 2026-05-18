@@ -139,25 +139,34 @@ echo "Brief input file created at ${BRIEF_INPUT_FILE}"
 echo "Combined journal and calendar data ready for processing"
 
 # Generate a summary of the past 7 days' briefs using summarize_outputs.py
+# Store in a persistent file that is only created once per day
 SEVEN_DAYS_AGO=$(date -d "7 days ago" +"%Y-%m-%d")
-SUMMARY_FILE="${BRIEF_REPO_PATH}/temp_summary_${SEVEN_DAYS_AGO}_to_${YESTERDAY}.md"
+SUMMARY_DIR="${BRIEF_REPO_PATH}/summaries"
+mkdir -p "${SUMMARY_DIR}"
+SUMMARY_FILE="${SUMMARY_DIR}/summary_${TODAY}.md"
 
-echo "Generating summary of briefs from ${SEVEN_DAYS_AGO} to ${YESTERDAY}..."
-python3 "${SCRIPT_DIR}/summarize_outputs.py" --start "${SEVEN_DAYS_AGO}" --end "${YESTERDAY}" --output "${SUMMARY_FILE}"
+# Check if summary already exists for today
+if [ -f "${SUMMARY_FILE}" ]; then
+    echo "Found existing 7-day summary for today at ${SUMMARY_FILE}"
+    echo "Reusing existing summary (delete file to regenerate)"
+else
+    echo "Generating summary of briefs from ${SEVEN_DAYS_AGO} to ${YESTERDAY}..."
+    python3 "${SCRIPT_DIR}/summarize_outputs.py" --start "${SEVEN_DAYS_AGO}" --end "${YESTERDAY}" --output "${SUMMARY_FILE}"
+    
+    if [ $? -eq 0 ] && [ -f "${SUMMARY_FILE}" ]; then
+        echo "Successfully generated 7-day summary"
+    else
+        echo "Warning: Could not generate 7-day summary. This may be normal if there are no briefs for the past week."
+        echo "Continuing without summary..."
+    fi
+fi
 
-if [ $? -eq 0 ] && [ -f "${SUMMARY_FILE}" ]; then
-    echo "Successfully generated 7-day summary"
-    # Append the summary to the brief input
+# If summary file exists, append it to the brief input
+if [ -f "${SUMMARY_FILE}" ]; then
     echo "" >> "${BRIEF_INPUT_FILE}"
     echo "Summary of briefs from the past 7 days (${SEVEN_DAYS_AGO} to ${YESTERDAY}):" >> "${BRIEF_INPUT_FILE}"
     cat "${SUMMARY_FILE}" >> "${BRIEF_INPUT_FILE}"
     echo "Added 7-day summary to input for AI review"
-    
-    # Clean up temporary summary file
-    rm -f "${SUMMARY_FILE}"
-else
-    echo "Warning: Could not generate 7-day summary. This may be normal if there are no briefs for the past week."
-    echo "Continuing without summary..."
 fi
 
 # Create empty brief output file
@@ -204,7 +213,7 @@ if [ $? -eq 0 ]; then
     cd "${BRIEF_REPO_PATH}" || { echo "Error: Could not change to brief repo directory ${BRIEF_REPO_PATH}"; exit 1; }
     
     # Add the new files to git
-    git add inputs/ outputs/
+    git add inputs/ outputs/ summaries/
     
     # Commit with a descriptive message
     git commit -m "Add daily brief for ${TODAY}"
