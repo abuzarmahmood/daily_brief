@@ -138,21 +138,26 @@ fi
 echo "Brief input file created at ${BRIEF_INPUT_FILE}"
 echo "Combined journal and calendar data ready for processing"
 
-# Find yesterday's brief file to include in aider input
-YESTERDAY_YEAR=$(date -d "yesterday" +"%Y")
-YESTERDAY_MONTH=$(date -d "yesterday" +"%m")
-YESTERDAY_DAY=$(date -d "yesterday" +"%d")
-YESTERDAY_BRIEF_FILE="${BRIEF_OUTPUTS_PATH}/${YESTERDAY_YEAR}/${YESTERDAY_MONTH}/${YESTERDAY_DAY}.md"
+# Generate a summary of the past 7 days' briefs using summarize_outputs.py
+SEVEN_DAYS_AGO=$(date -d "7 days ago" +"%Y-%m-%d")
+SUMMARY_FILE="${BRIEF_REPO_PATH}/temp_summary_${SEVEN_DAYS_AGO}_to_${YESTERDAY}.md"
 
-if [ -f "${YESTERDAY_BRIEF_FILE}" ]; then
-    echo "Found yesterday's brief at ${YESTERDAY_BRIEF_FILE}"
-    # Append yesterday's brief content to input for AI to review
+echo "Generating summary of briefs from ${SEVEN_DAYS_AGO} to ${YESTERDAY}..."
+python3 "${SCRIPT_DIR}/summarize_outputs.py" --start "${SEVEN_DAYS_AGO}" --end "${YESTERDAY}" --output "${SUMMARY_FILE}"
+
+if [ $? -eq 0 ] && [ -f "${SUMMARY_FILE}" ]; then
+    echo "Successfully generated 7-day summary"
+    # Append the summary to the brief input
     echo "" >> "${BRIEF_INPUT_FILE}"
-    echo "Yesterday's brief (${YESTERDAY}):" >> "${BRIEF_INPUT_FILE}"
-    cat "${YESTERDAY_BRIEF_FILE}" >> "${BRIEF_INPUT_FILE}"
-    echo "Added yesterday's brief to input for AI review"
+    echo "Summary of briefs from the past 7 days (${SEVEN_DAYS_AGO} to ${YESTERDAY}):" >> "${BRIEF_INPUT_FILE}"
+    cat "${SUMMARY_FILE}" >> "${BRIEF_INPUT_FILE}"
+    echo "Added 7-day summary to input for AI review"
+    
+    # Clean up temporary summary file
+    rm -f "${SUMMARY_FILE}"
 else
-    echo "No brief found from yesterday (${YESTERDAY_BRIEF_FILE}), skipping"
+    echo "Warning: Could not generate 7-day summary. This may be normal if there are no briefs for the past week."
+    echo "Continuing without summary..."
 fi
 
 # Create empty brief output file
