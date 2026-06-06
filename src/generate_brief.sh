@@ -175,13 +175,25 @@ touch "${BRIEF_OUTPUT_FILE}"
 # Get path to STYLE.md
 STYLE_FILE="${SCRIPT_DIR}/../STYLE.md"
 
+# Get path to DEADLINES.md (create if it doesn't exist)
+DEADLINES_FILE="${BRIEF_REPO_PATH}/DEADLINES.md"
+if [ ! -f "${DEADLINES_FILE}" ]; then
+    echo "# Deadlines Tracker" > "${DEADLINES_FILE}"
+    echo "" >> "${DEADLINES_FILE}"
+    echo "| Date | Deadline | Status | Notes |" >> "${DEADLINES_FILE}"
+    echo "|------|----------|--------|-------|" >> "${DEADLINES_FILE}"
+    echo "Created initial deadlines table at ${DEADLINES_FILE}"
+fi
+
 # Generate daily brief using aider
 echo "Generating daily brief with aider..."
 
 # Build the aider message
-AIDER_MESSAGE="Based on the provided journal entries, calendar data, and yesterday's incomplete items, please generate a concise daily brief and gameplan for today (${TODAY_DAY_NAME}, ${TODAY}). 
+AIDER_MESSAGE="Based on the provided journal entries, calendar data, yesterday's incomplete items, and the deadlines table, please generate a concise daily brief and gameplan for today (${TODAY_DAY_NAME}, ${TODAY}). 
 
 The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK}).
+
+The DEADLINES.md file contains a table of tracked deadlines with their status.
 
 Please follow the style guide in STYLE.md for formatting and content guidelines.
 
@@ -199,10 +211,10 @@ fi
 # Use configured model or aider's default
 if [ "${AIDER_MODEL}" = "default" ]; then
     echo "Using aider's default model..."
-    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${DEADLINES_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 else
     echo "Using configured model: ${AIDER_MODEL}..."
-    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${DEADLINES_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 fi
 
 if [ $? -eq 0 ]; then
@@ -210,16 +222,6 @@ if [ $? -eq 0 ]; then
     
     # Update deadlines table based on the generated brief
     echo "Updating deadlines table with any deadlines mentioned in the brief..."
-    DEADLINES_FILE="${BRIEF_REPO_PATH}/DEADLINES.md"
-    
-    # Create deadlines file if it doesn't exist
-    if [ ! -f "${DEADLINES_FILE}" ]; then
-        echo "# Deadlines Tracker" > "${DEADLINES_FILE}"
-        echo "" >> "${DEADLINES_FILE}"
-        echo "| Date | Deadline | Status | Notes |" >> "${DEADLINES_FILE}"
-        echo "|------|----------|--------|-------|" >> "${DEADLINES_FILE}"
-        echo "Created initial deadlines table at ${DEADLINES_FILE}"
-    fi
     
     # Use aider to update the deadlines table
     DEADLINES_MESSAGE="Review the daily brief and extract any deadlines mentioned. Update the DEADLINES.md table with:
