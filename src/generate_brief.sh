@@ -218,20 +218,14 @@ fi
 if [ $? -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
     
-    # Prepend deadlines table to the top of the brief
-    echo "Adding deadlines table to the top of the brief..."
+    # Read deadlines table and substitute {{DEADLINES}} variable in the brief
     if [ -f "${DEADLINES_FILE}" ]; then
-        # Create a temporary file with deadlines first, then the brief content
+        DEADLINES_TABLE=$(cat "${DEADLINES_FILE}")
+        # Use a temporary file to avoid issues with special characters
         TEMP_FILE="${BRIEF_OUTPUT_FILE}.tmp"
-        cat "${DEADLINES_FILE}" > "${TEMP_FILE}"
-        echo "" >> "${TEMP_FILE}"
-        echo "---" >> "${TEMP_FILE}"
-        echo "" >> "${TEMP_FILE}"
-        cat "${BRIEF_OUTPUT_FILE}" >> "${TEMP_FILE}"
+        sed "s|{{DEADLINES}}|${DEADLINES_TABLE//&/\\&}|g" "${BRIEF_OUTPUT_FILE}" > "${TEMP_FILE}"
         mv "${TEMP_FILE}" "${BRIEF_OUTPUT_FILE}"
-        echo "Deadlines table added to brief"
-    else
-        echo "Warning: DEADLINES.md not found, skipping deadlines section"
+        echo "Deadlines table inserted into brief"
     fi
     
     # Commit and push the generated brief to GitHub
