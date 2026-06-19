@@ -211,10 +211,10 @@ fi
 # Use configured model or aider's default
 if [ "${AIDER_MODEL}" = "default" ]; then
     echo "Using aider's default model..."
-    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${DEADLINES_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${DEADLINES_FILE}" "${BRIEF_OUTPUT_FILE}"
 else
     echo "Using configured model: ${AIDER_MODEL}..."
-    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${DEADLINES_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${DEADLINES_FILE}" "${BRIEF_OUTPUT_FILE}"
 fi
 
 if [ $? -eq 0 ]; then
