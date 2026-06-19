@@ -180,8 +180,8 @@ DEADLINES_FILE="${BRIEF_REPO_PATH}/DEADLINES.md"
 if [ ! -f "${DEADLINES_FILE}" ]; then
     echo "# Deadlines Tracker" > "${DEADLINES_FILE}"
     echo "" >> "${DEADLINES_FILE}"
-    echo "| Date | Deadline | Status | Notes |" >> "${DEADLINES_FILE}"
-    echo "|------|----------|--------|-------|" >> "${DEADLINES_FILE}"
+    echo "| Category | Date | Deadline | Status | Notes |" >> "${DEADLINES_FILE}"
+    echo "|----------|------|----------|--------|-------|" >> "${DEADLINES_FILE}"
     echo "Created initial deadlines table at ${DEADLINES_FILE}"
 fi
 
