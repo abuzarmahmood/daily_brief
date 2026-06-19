@@ -189,11 +189,9 @@ fi
 echo "Generating daily brief with aider..."
 
 # Build the aider message
-AIDER_MESSAGE="Based on the provided journal entries, calendar data, yesterday's incomplete items, and the deadlines table, please generate a concise daily brief and gameplan for today (${TODAY_DAY_NAME}, ${TODAY}). 
+AIDER_MESSAGE="Based on the provided journal entries, calendar data, and yesterday's incomplete items, please generate a concise daily brief and gameplan for today (${TODAY_DAY_NAME}, ${TODAY}). 
 
 The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK}).
-
-The DEADLINES.md file contains a table of tracked deadlines with their status.
 
 Please follow the style guide in STYLE.md for formatting and content guidelines.
 
@@ -211,39 +209,29 @@ fi
 # Use configured model or aider's default
 if [ "${AIDER_MODEL}" = "default" ]; then
     echo "Using aider's default model..."
-    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${DEADLINES_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 else
     echo "Using configured model: ${AIDER_MODEL}..."
-    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${DEADLINES_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
 fi
 
 if [ $? -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
     
-    # Update deadlines table based on the generated brief
-    echo "Updating deadlines table with any deadlines mentioned in the brief..."
-    
-    # Use aider to update the deadlines table
-    DEADLINES_MESSAGE="Review the daily brief and extract any deadlines mentioned. Update the DEADLINES.md table with:
-- Any new deadlines found in the brief (add new rows)
-- Update status of existing deadlines if mentioned in the brief
-- Keep the table sorted by date (earliest first)
-- Use format: YYYY-MM-DD for dates
-- Status should be: Upcoming, In Progress, Completed, or Missed
-- Add relevant notes from the brief
-
-Only update the table if there are actual deadlines mentioned. If no deadlines are found, leave the table unchanged."
-    
-    if [ "${AIDER_MODEL}" = "default" ]; then
-        aider --message "${DEADLINES_MESSAGE}" --yes --read "${BRIEF_OUTPUT_FILE}" "${DEADLINES_FILE}"
+    # Prepend deadlines table to the top of the brief
+    echo "Adding deadlines table to the top of the brief..."
+    if [ -f "${DEADLINES_FILE}" ]; then
+        # Create a temporary file with deadlines first, then the brief content
+        TEMP_FILE="${BRIEF_OUTPUT_FILE}.tmp"
+        cat "${DEADLINES_FILE}" > "${TEMP_FILE}"
+        echo "" >> "${TEMP_FILE}"
+        echo "---" >> "${TEMP_FILE}"
+        echo "" >> "${TEMP_FILE}"
+        cat "${BRIEF_OUTPUT_FILE}" >> "${TEMP_FILE}"
+        mv "${TEMP_FILE}" "${BRIEF_OUTPUT_FILE}"
+        echo "Deadlines table added to brief"
     else
-        aider --model "${AIDER_MODEL}" --message "${DEADLINES_MESSAGE}" --yes --read "${BRIEF_OUTPUT_FILE}" "${DEADLINES_FILE}"
-    fi
-    
-    if [ $? -eq 0 ]; then
-        echo "Deadlines table updated successfully"
-    else
-        echo "Warning: Could not update deadlines table. Continuing..."
+        echo "Warning: DEADLINES.md not found, skipping deadlines section"
     fi
     
     # Commit and push the generated brief to GitHub
