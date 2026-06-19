@@ -175,6 +175,16 @@ touch "${BRIEF_OUTPUT_FILE}"
 # Get path to STYLE.md
 STYLE_FILE="${SCRIPT_DIR}/../STYLE.md"
 
+# Get path to DEADLINES.md (create if it doesn't exist)
+DEADLINES_FILE="${BRIEF_REPO_PATH}/DEADLINES.md"
+if [ ! -f "${DEADLINES_FILE}" ]; then
+    echo "# Deadlines Tracker" > "${DEADLINES_FILE}"
+    echo "" >> "${DEADLINES_FILE}"
+    echo "| Category | Date | Deadline | Status | Notes |" >> "${DEADLINES_FILE}"
+    echo "|----------|------|----------|--------|-------|" >> "${DEADLINES_FILE}"
+    echo "Created initial deadlines table at ${DEADLINES_FILE}"
+fi
+
 # Generate daily brief using aider
 echo "Generating daily brief with aider..."
 
@@ -208,12 +218,28 @@ fi
 if [ $? -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
     
+    # Prepend deadlines table to the top of the brief
+    echo "Adding deadlines table to the top of the brief..."
+    if [ -f "${DEADLINES_FILE}" ]; then
+        # Create a temporary file with deadlines first, then the brief content
+        TEMP_FILE="${BRIEF_OUTPUT_FILE}.tmp"
+        cat "${DEADLINES_FILE}" > "${TEMP_FILE}"
+        echo "" >> "${TEMP_FILE}"
+        echo "---" >> "${TEMP_FILE}"
+        echo "" >> "${TEMP_FILE}"
+        cat "${BRIEF_OUTPUT_FILE}" >> "${TEMP_FILE}"
+        mv "${TEMP_FILE}" "${BRIEF_OUTPUT_FILE}"
+        echo "Deadlines table added to brief"
+    else
+        echo "Warning: DEADLINES.md not found, skipping deadlines section"
+    fi
+    
     # Commit and push the generated brief to GitHub
     echo "Committing and pushing brief to GitHub..."
     cd "${BRIEF_REPO_PATH}" || { echo "Error: Could not change to brief repo directory ${BRIEF_REPO_PATH}"; exit 1; }
     
-    # Add the new files to git
-    git add inputs/ outputs/ summaries/
+    # Add the new files to git (including DEADLINES.md)
+    git add inputs/ outputs/ summaries/ DEADLINES.md
     
     # Commit with a descriptive message
     git commit -m "Add daily brief for ${TODAY}"
