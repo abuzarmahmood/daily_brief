@@ -220,10 +220,19 @@ if [ $? -eq 0 ]; then
     
     # Read deadlines table and substitute {{DEADLINES}} variable in the brief
     if [ -f "${DEADLINES_FILE}" ]; then
-        DEADLINES_TABLE=$(cat "${DEADLINES_FILE}")
-        # Use a temporary file to avoid issues with special characters
+        # Use awk to replace {{DEADLINES}} with the contents of DEADLINES_FILE
+        # This handles multi-line content and special characters properly
         TEMP_FILE="${BRIEF_OUTPUT_FILE}.tmp"
-        sed "s|{{DEADLINES}}|${DEADLINES_TABLE//&/\\&}|g" "${BRIEF_OUTPUT_FILE}" > "${TEMP_FILE}"
+        awk -v deadlines_file="${DEADLINES_FILE}" '
+            /{{DEADLINES}}/ {
+                while ((getline line < deadlines_file) > 0) {
+                    print line
+                }
+                close(deadlines_file)
+                next
+            }
+            { print }
+        ' "${BRIEF_OUTPUT_FILE}" > "${TEMP_FILE}"
         mv "${TEMP_FILE}" "${BRIEF_OUTPUT_FILE}"
         echo "Deadlines table inserted into brief"
     fi
