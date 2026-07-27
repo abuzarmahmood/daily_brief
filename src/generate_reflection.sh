@@ -64,7 +64,7 @@ fi
 BRIEF_REPO_PATH=$(jq -r '.paths.brief_repo' "${CONFIG_FILE}")
 BRIEF_INPUTS_PATH="${BRIEF_REPO_PATH}/inputs"
 BRIEF_OUTPUTS_PATH="${BRIEF_REPO_PATH}/outputs"
-AIDER_MODEL=$(jq -r '.aider.model' "${CONFIG_FILE}")
+AIDER_MODEL=$(jq -r '.aider.summary_model' "${CONFIG_FILE}")
 
 # Create reflections directory if it doesn't exist
 REFLECTIONS_PATH="${BRIEF_REPO_PATH}/reflections"
