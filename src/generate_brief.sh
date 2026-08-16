@@ -2,18 +2,35 @@
 
 # Parse command line arguments
 USER_MESSAGE=""
-while getopts "m:" opt; do
+TARGET_DATE=""
+while getopts "m:d:" opt; do
     case $opt in
         m)
             USER_MESSAGE="$OPTARG"
             ;;
+        d)
+            TARGET_DATE="$OPTARG"
+            ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
-            echo "Usage: $0 [-m \"additional message for aider\"]"
+            echo "Usage: $0 [-m \"additional message for aider\"] [-d YYYY-MM-DD]"
             exit 1
             ;;
     esac
 done
+
+# Set target date to today if not specified
+if [ -z "${TARGET_DATE}" ]; then
+    TARGET_DATE=$(date +"%Y-%m-%d")
+else
+    # Validate date format
+    if ! date -d "${TARGET_DATE}" +"%Y-%m-%d" &>/dev/null; then
+        echo "Error: Invalid date format '${TARGET_DATE}'. Use YYYY-MM-DD format."
+        exit 1
+    fi
+    # Normalize the date format
+    TARGET_DATE=$(date -d "${TARGET_DATE}" +"%Y-%m-%d")
+fi
 
 # Print current date and time
 echo "Script started at: $(date '+%Y-%m-%d %H:%M:%S')"
@@ -78,15 +95,15 @@ fi
 ## Collect calendar data and save to daily log file
 # Get current date for logging and filename
 CURRENT_DATE=$(date +"%Y-%m-%d %H:%M:%S")
-TODAY=$(date +"%Y-%m-%d")
-TODAY_DAY_NAME=$(date +"%A")
-TOMORROW=$(date -d "tomorrow" +"%Y-%m-%d")
-YESTERDAY=$(date -d "yesterday" +"%Y-%m-%d")
-NEXT_WEEK=$(date -d "+7 days" +"%Y-%m-%d")
-DATE_TWO_WEEKS_AGO=$(date -d "14 days ago" +"%Y-%m-%d")
-YEAR=$(date +"%Y")
-MONTH=$(date +"%m")
-DAY=$(date +"%d")
+TODAY="${TARGET_DATE}"
+TODAY_DAY_NAME=$(date -d "${TARGET_DATE}" +"%A")
+TOMORROW=$(date -d "${TARGET_DATE} + 1 day" +"%Y-%m-%d")
+YESTERDAY=$(date -d "${TARGET_DATE} - 1 day" +"%Y-%m-%d")
+NEXT_WEEK=$(date -d "${TARGET_DATE} + 7 days" +"%Y-%m-%d")
+DATE_TWO_WEEKS_AGO=$(date -d "${TARGET_DATE} - 14 days" +"%Y-%m-%d")
+YEAR=$(date -d "${TARGET_DATE}" +"%Y")
+MONTH=$(date -d "${TARGET_DATE}" +"%m")
+DAY=$(date -d "${TARGET_DATE}" +"%d")
 
 # Create hierarchical directory structure for brief outputs
 BRIEF_OUTPUT_DIR="${BRIEF_OUTPUTS_PATH}/${YEAR}/${MONTH}"
@@ -140,7 +157,7 @@ echo "Combined journal and calendar data ready for processing"
 
 # Generate a summary of the past 7 days' briefs using summarize_outputs.py
 # Store in a persistent file that is only created once per day
-SEVEN_DAYS_AGO=$(date -d "7 days ago" +"%Y-%m-%d")
+SEVEN_DAYS_AGO=$(date -d "${TARGET_DATE} - 7 days" +"%Y-%m-%d")
 SUMMARY_DIR="${BRIEF_REPO_PATH}/summaries"
 mkdir -p "${SUMMARY_DIR}"
 SUMMARY_FILE="${SUMMARY_DIR}/summary_${TODAY}.md"
