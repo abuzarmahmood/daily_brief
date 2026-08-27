@@ -130,6 +130,60 @@ Combine both approaches for comprehensive daily tracking:
 - Ensure the script has execute permissions: `chmod +x src/generate_brief.sh`
 - Make sure all required tools (gcalcli, jrnl, aider) are accessible in your cron environment
 
+#### Important: PATH Configuration for Cron
+
+Cron runs with a minimal PATH environment, which can cause commands like `jrnl`, `aider`, and `gcalcli` to not be found. To fix this, you have two options:
+
+**Option A: Extend the PATH in your crontab**
+
+Add this line at the top of your crontab (before your cron jobs):
+```bash
+PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/home/USERNAME/.local/bin
+```
+
+Then your cron entries will work:
+```bash
+0 7 * * 1-5 cd /path/to/brief/repo && /path/to/src/generate_brief.sh >> /tmp/brief_generation.log 2>&1
+```
+
+**Option B: Use a Python virtual environment (Recommended)**
+
+If you installed Python packages in a virtual environment:
+```bash
+0 7 * * 1-5 source /path/to/venv/bin/activate && cd /path/to/brief/repo && /path/to/src/generate_brief.sh >> /tmp/brief_generation.log 2>&1
+```
+
+**Option C: Use full paths to commands**
+
+Find the full paths to your commands:
+```bash
+which jrnl
+which aider
+which gcalcli
+```
+
+Then update your crontab to use these full paths in the script, or set them as environment variables.
+
+**Debugging cron issues:**
+
+If your cron job fails, check the log file:
+```bash
+tail -f /tmp/brief_generation.log
+```
+
+Common issues:
+- `jrnl command not found` - jrnl is not in the cron PATH
+- `aider command not found` - aider is not in the cron PATH
+- `gcalcli command not found` - gcalcli is not in the cron PATH
+- `jq command not found` - jq is not installed or not in PATH
+
+To verify your cron environment, add this test job:
+```bash
+0 6 * * 1-5 env > /tmp/cron_env.log 2>&1
+```
+
+Then check `/tmp/cron_env.log` to see what PATH and other variables are available.
+
 ## Configuration
 Personal information and paths are stored in `config.json` (not committed to repo).
 
