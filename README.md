@@ -80,6 +80,56 @@ git remote add origin https://github.com/yourusername/your-repo.git
 ./src/generate_brief.sh
 ```
 
+### Command-line Options
+- `-m "message"` - Add additional context/message for aider when generating the brief
+- `-d YYYY-MM-DD` - Generate brief for a specific date (defaults to today)
+
+Example:
+```bash
+./src/generate_brief.sh -m "Focus on project deadline" -d 2024-01-15
+```
+
+### Scheduling with Crontab
+
+You can automate daily brief generation by adding entries to your crontab. Here are two common approaches:
+
+#### Option 1: Morning Brief (Recommended)
+Generate a fresh brief each morning with the latest calendar and journal data:
+
+```bash
+crontab -e
+```
+
+Add this line to generate a brief at 7:00 AM every weekday:
+```
+0 7 * * 1-5 cd /path/to/brief/repo && /path/to/src/generate_brief.sh >> /tmp/brief_generation.log 2>&1
+```
+
+#### Option 2: End-of-Day Update
+Update logs and calendar data at the end of the day (useful for tracking incomplete items):
+
+```bash
+0 18 * * 1-5 cd /path/to/brief/repo && /path/to/src/generate_brief.sh -m "End of day update - review incomplete items" >> /tmp/brief_generation.log 2>&1
+```
+
+#### Option 3: Both Morning and Evening
+Combine both approaches for comprehensive daily tracking:
+
+```bash
+# Morning brief at 7:00 AM
+0 7 * * 1-5 cd /path/to/brief/repo && /path/to/src/generate_brief.sh >> /tmp/brief_generation.log 2>&1
+
+# Evening update at 6:00 PM
+0 18 * * 1-5 cd /path/to/brief/repo && /path/to/src/generate_brief.sh -m "End of day review" >> /tmp/brief_generation.log 2>&1
+```
+
+**Notes:**
+- Replace `/path/to/brief/repo` and `/path/to/src/generate_brief.sh` with your actual paths
+- The `>> /tmp/brief_generation.log 2>&1` redirects output to a log file for debugging
+- `1-5` in the cron schedule means Monday-Friday; use `*` for every day
+- Ensure the script has execute permissions: `chmod +x src/generate_brief.sh`
+- Make sure all required tools (gcalcli, jrnl, aider) are accessible in your cron environment
+
 ## Configuration
 Personal information and paths are stored in `config.json` (not committed to repo).
 
