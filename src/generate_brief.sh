@@ -1,5 +1,85 @@
 #!/bin/bash
 
+# Check for required dependencies
+echo "Checking required dependencies..."
+
+MISSING_DEPS=()
+
+# Check for jq
+if ! command -v jq &> /dev/null; then
+    MISSING_DEPS+=("jq")
+fi
+
+# Check for gcalcli
+if ! command -v gcalcli &> /dev/null; then
+    MISSING_DEPS+=("gcalcli")
+fi
+
+# Check for jrnl
+if ! command -v jrnl &> /dev/null; then
+    MISSING_DEPS+=("jrnl")
+fi
+
+# Check for git
+if ! command -v git &> /dev/null; then
+    MISSING_DEPS+=("git")
+fi
+
+# Check for aider
+if ! command -v aider &> /dev/null; then
+    MISSING_DEPS+=("aider")
+fi
+
+# Check for python3
+if ! command -v python3 &> /dev/null; then
+    MISSING_DEPS+=("python3")
+fi
+
+# If any dependencies are missing, print detailed error messages and exit
+if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
+    echo "Error: Missing required dependencies!"
+    echo ""
+    
+    for dep in "${MISSING_DEPS[@]}"; do
+        case $dep in
+            jq)
+                echo "  ❌ jq - JSON parser for reading configuration"
+                echo "     Install: brew install jq (macOS) or sudo apt-get install jq (Ubuntu/Debian)"
+                ;;
+            gcalcli)
+                echo "  ❌ gcalcli - Google Calendar CLI for fetching calendar events"
+                echo "     Install: pip install gcalcli"
+                echo "     Setup: Run 'gcalcli oauth' to authenticate with Google Calendar"
+                ;;
+            jrnl)
+                echo "  ❌ jrnl - Journal CLI for accessing journal entries"
+                echo "     Install: pip install jrnl"
+                echo "     Setup: Run 'jrnl --setup' to initialize your journal"
+                ;;
+            git)
+                echo "  ❌ git - Version control system"
+                echo "     Install: brew install git (macOS) or sudo apt-get install git (Ubuntu/Debian)"
+                ;;
+            aider)
+                echo "  ❌ aider - AI assistant for generating daily briefs"
+                echo "     Install: pip install aider-chat"
+                ;;
+            python3)
+                echo "  ❌ python3 - Python interpreter (required for summarize_outputs.py)"
+                echo "     Install: brew install python3 (macOS) or sudo apt-get install python3 (Ubuntu/Debian)"
+                ;;
+        esac
+        echo ""
+    done
+    
+    echo "Please install the missing dependencies and try again."
+    echo "See README.md for detailed installation instructions."
+    exit 1
+fi
+
+echo "✓ All required dependencies found"
+echo ""
+
 # Parse command line arguments
 USER_MESSAGE=""
 TARGET_DATE=""
@@ -128,17 +208,13 @@ git pull origin master
 
 # Append calendar and jrnl data to brief input file
 echo "Collecting journal entries from the last two weeks..."
-if ! command -v jrnl &> /dev/null; then
-    echo "Warning: jrnl command not found. Skipping journal entries."
-    echo "Journal entries not available (jrnl not installed)" > "${BRIEF_INPUT_FILE}"
+jrnl -from $DATE_TWO_WEEKS_AGO --format md > "${BRIEF_INPUT_FILE}" 2>&1
+if [ $? -ne 0 ]; then
+    echo "Error: jrnl command failed. Check jrnl configuration."
+    echo "Run 'jrnl --setup' to configure jrnl if this is your first time using it."
+    echo "Journal entries not available (jrnl command failed)" > "${BRIEF_INPUT_FILE}"
 else
-    jrnl -from $DATE_TWO_WEEKS_AGO --format md > "${BRIEF_INPUT_FILE}" 2>&1
-    if [ $? -ne 0 ]; then
-        echo "Warning: jrnl command failed. Check jrnl configuration."
-        echo "Journal entries not available (jrnl command failed)" > "${BRIEF_INPUT_FILE}"
-    else
-        echo "Successfully collected journal entries"
-    fi
+    echo "Successfully collected journal entries"
 fi
 
 echo "" >> "${BRIEF_INPUT_FILE}"  # Add empty line for readability
