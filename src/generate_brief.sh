@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Load environment variables (e.g. API keys) that cron's minimal environment
+# doesn't source from ~/.bashrc on its own
+if [ -f "${HOME}/.bash_aliases" ]; then
+    source "${HOME}/.bash_aliases"
+fi
+
 # Check for required dependencies
 echo "Checking required dependencies..."
 
@@ -300,15 +306,26 @@ ${USER_MESSAGE}"
 fi
 
 # Use configured model or aider's default
+AIDER_LOG_FILE=$(mktemp)
 if [ "${AIDER_MODEL}" = "default" ]; then
     echo "Using aider's default model..."
-    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}" 2>&1 | tee "${AIDER_LOG_FILE}"
 else
     echo "Using configured model: ${AIDER_MODEL}..."
-    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}"
+    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}" 2>&1 | tee "${AIDER_LOG_FILE}"
 fi
+AIDER_EXIT_CODE=${PIPESTATUS[0]}
 
-if [ $? -eq 0 ]; then
+# aider can exit 0 even when the underlying LLM call failed (e.g. missing/invalid
+# API key), so also scan its output for known failure signatures
+if [ ${AIDER_EXIT_CODE} -eq 0 ] && grep -qiE "AuthenticationError|Missing .*API Key|APIConnectionError|RateLimitError|invalid_api_key|litellm\.[A-Za-z]*Error" "${AIDER_LOG_FILE}"; then
+    echo "Error: aider reported an API error despite exiting successfully."
+    echo "Check that ANTHROPIC_API_KEY (or the relevant provider key) is set in the environment."
+    AIDER_EXIT_CODE=1
+fi
+rm -f "${AIDER_LOG_FILE}"
+
+if [ ${AIDER_EXIT_CODE} -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
     
     # Read deadlines table and substitute {{DEADLINES}} variable in the brief
@@ -349,4 +366,5 @@ if [ $? -eq 0 ]; then
     fi
 else
     echo "Error generating daily brief. Check aider output for details."
+    exit 1
 fi
