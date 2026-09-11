@@ -217,16 +217,19 @@ echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
 
 echo "Calendar data collected and saved to ${CALENDAR_LOG_FILE}"
 
-## Collect GitHub activity (PRs and issues authored by the configured user)
-# and save to daily log file. `gh` is optional -- skip gracefully (logging why,
-# never leaking raw CLI error/usage text into the brief input) if it's not
-# installed/authenticated or no github.username is configured.
+## Collect GitHub activity (PRs and issues authored by the configured user),
+# split into a "past 2 days" and "past week" subsection. `gh` is optional --
+# skip gracefully (logging why, never leaking raw CLI error/usage text into
+# the brief input) if it's not installed/authenticated or no github.username
+# is configured.
 #
 # Under cron's minimal PATH, `gh` can resolve to an older system install that
 # doesn't support `gh search` at all (confirmed: /usr/bin/gh on this machine
 # predates it) -- prefer the anaconda gh, which does, and only fall back to
 # PATH resolution if that's missing.
 GITHUB_USERNAME=$(jq -r '.github.username // empty' "${CONFIG_FILE}")
+GITHUB_TWO_DAYS_AGO=$(date -d "${TARGET_DATE} - 2 days" +"%Y-%m-%d")
+GITHUB_ONE_WEEK_AGO=$(date -d "${TARGET_DATE} - 7 days" +"%Y-%m-%d")
 
 GH_BIN=""
 for candidate in "${HOME}/anaconda3/bin/gh" "$(command -v gh 2>/dev/null)"; do
@@ -236,6 +239,43 @@ for candidate in "${HOME}/anaconda3/bin/gh" "$(command -v gh 2>/dev/null)"; do
     fi
 done
 
+# Fetches PRs/issues updated since $1, appending a labeled subsection ($2) to
+# GITHUB_LOG_FILE.
+fetch_github_activity_subsection() {
+    local since="$1"
+    local label="$2"
+    local prs_output prs_exit issues_output issues_exit
+
+    prs_output=$("${GH_BIN}" search prs --author="${GITHUB_USERNAME}" --updated=">=${since}" --limit 50 \
+        --json repository,title,state,url,updatedAt \
+        --jq '.[] | "- [\(.state)] \(.repository.nameWithOwner): \(.title) (\(.url)) - updated \(.updatedAt | split("T")[0])"' 2>&1)
+    prs_exit=$?
+    issues_output=$("${GH_BIN}" search issues --author="${GITHUB_USERNAME}" --updated=">=${since}" --limit 50 \
+        --json repository,title,state,url,updatedAt \
+        --jq '.[] | "- [\(.state)] \(.repository.nameWithOwner): \(.title) (\(.url)) - updated \(.updatedAt | split("T")[0])"' 2>&1)
+    issues_exit=$?
+
+    echo "${label} (since ${since}):" >> "${GITHUB_LOG_FILE}"
+    if [ ${prs_exit} -ne 0 ] && [ ${issues_exit} -ne 0 ]; then
+        echo "  gh queries failed (${GH_BIN}), skipping" >> "${GITHUB_LOG_FILE}"
+    else
+        echo "  Pull requests:" >> "${GITHUB_LOG_FILE}"
+        if [ ${prs_exit} -eq 0 ]; then
+            echo "${prs_output}" >> "${GITHUB_LOG_FILE}"
+        else
+            echo "  (pr query failed, skipped)" >> "${GITHUB_LOG_FILE}"
+        fi
+        echo "" >> "${GITHUB_LOG_FILE}"
+        echo "  Issues:" >> "${GITHUB_LOG_FILE}"
+        if [ ${issues_exit} -eq 0 ]; then
+            echo "${issues_output}" >> "${GITHUB_LOG_FILE}"
+        else
+            echo "  (issue query failed, skipped)" >> "${GITHUB_LOG_FILE}"
+        fi
+    fi
+    echo "" >> "${GITHUB_LOG_FILE}"
+}
+
 echo "=== GitHub activity collected on ${CURRENT_DATE} ===" > "${GITHUB_LOG_FILE}"
 if [ -z "${GITHUB_USERNAME}" ]; then
     echo "No github.username configured in config.json, skipping GitHub activity" >> "${GITHUB_LOG_FILE}"
@@ -244,34 +284,9 @@ elif [ -z "${GH_BIN}" ]; then
 elif ! "${GH_BIN}" auth status &> /dev/null; then
     echo "gh CLI found (${GH_BIN}) but not authenticated -- run 'gh auth login', skipping GitHub activity" >> "${GITHUB_LOG_FILE}"
 else
-    PRS_OUTPUT=$("${GH_BIN}" search prs --author="${GITHUB_USERNAME}" --updated=">=${DATE_TWO_WEEKS_AGO}" --limit 50 \
-        --json repository,title,state,url,updatedAt \
-        --jq '.[] | "- [\(.state)] \(.repository.nameWithOwner): \(.title) (\(.url)) - updated \(.updatedAt | split("T")[0])"' 2>&1)
-    PRS_EXIT=$?
-    ISSUES_OUTPUT=$("${GH_BIN}" search issues --author="${GITHUB_USERNAME}" --updated=">=${DATE_TWO_WEEKS_AGO}" --limit 50 \
-        --json repository,title,state,url,updatedAt \
-        --jq '.[] | "- [\(.state)] \(.repository.nameWithOwner): \(.title) (\(.url)) - updated \(.updatedAt | split("T")[0])"' 2>&1)
-    ISSUES_EXIT=$?
-
-    if [ ${PRS_EXIT} -ne 0 ] && [ ${ISSUES_EXIT} -ne 0 ]; then
-        echo "gh queries failed (${GH_BIN}), skipping GitHub activity" >> "${GITHUB_LOG_FILE}"
-    else
-        echo "Pull requests (updated since ${DATE_TWO_WEEKS_AGO}):" >> "${GITHUB_LOG_FILE}"
-        if [ ${PRS_EXIT} -eq 0 ]; then
-            echo "${PRS_OUTPUT}" >> "${GITHUB_LOG_FILE}"
-        else
-            echo "(pr query failed, skipped)" >> "${GITHUB_LOG_FILE}"
-        fi
-        echo "" >> "${GITHUB_LOG_FILE}"
-        echo "Issues (updated since ${DATE_TWO_WEEKS_AGO}):" >> "${GITHUB_LOG_FILE}"
-        if [ ${ISSUES_EXIT} -eq 0 ]; then
-            echo "${ISSUES_OUTPUT}" >> "${GITHUB_LOG_FILE}"
-        else
-            echo "(issue query failed, skipped)" >> "${GITHUB_LOG_FILE}"
-        fi
-    fi
+    fetch_github_activity_subsection "${GITHUB_TWO_DAYS_AGO}" "Past 2 days"
+    fetch_github_activity_subsection "${GITHUB_ONE_WEEK_AGO}" "Past week"
 fi
-echo "" >> "${GITHUB_LOG_FILE}"  # Add empty line for readability
 
 echo "GitHub activity collected and saved to ${GITHUB_LOG_FILE}"
 
@@ -374,7 +389,7 @@ CLAUDE_MESSAGE="Based on the journal entries, calendar data, GitHub activity, an
 
 The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK}).
 
-The GitHub activity data (if present) covers pull requests and issues authored in the past 2 weeks; summarize it briefly rather than listing every item.
+The GitHub activity data (if present) is split into a \"past 2 days\" and \"past week\" subsection (the past week window includes the past 2 days too); summarize each briefly rather than listing every item.
 
 Follow the style guide at ${STYLE_FILE} for formatting and content guidelines.
 

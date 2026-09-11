@@ -207,6 +207,21 @@ test_claude_dependency_checked() {
     fi
 }
 
+# Test 18: Verify GitHub activity is split into "past 2 days" and "past week"
+# subsections (narrowed from the original flat past-2-weeks window)
+test_github_activity_two_subsections() {
+    if grep -q 'GITHUB_TWO_DAYS_AGO=' "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q 'GITHUB_ONE_WEEK_AGO=' "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q 'fetch_github_activity_subsection "\${GITHUB_TWO_DAYS_AGO}" "Past 2 days"' "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q 'fetch_github_activity_subsection "\${GITHUB_ONE_WEEK_AGO}" "Past week"' "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 18 PASSED: GitHub activity is split into past-2-days/past-week subsections"
+        return 0
+    else
+        echo "✗ Test 18 FAILED: GitHub activity subsections are not implemented"
+        return 1
+    fi
+}
+
 # Run all tests
 echo "Running tests for generate_brief.sh changes..."
 echo ""
@@ -230,6 +245,7 @@ test_github_activity_appended || FAILED=1
 test_brief_uses_claude_not_aider || FAILED=1
 test_claude_failure_detection || FAILED=1
 test_claude_dependency_checked || FAILED=1
+test_github_activity_two_subsections || FAILED=1
 
 echo ""
 if [ $FAILED -eq 0 ]; then
