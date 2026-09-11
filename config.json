@@ -10,6 +10,9 @@
     "log": "/home/abuzarmahmood/Desktop/abu_log",
     "brief_repo": "/home/abuzarmahmood/Desktop/brief_log"
   },
+  "github": {
+    "username": "abuzarmahmood"
+  },
   "aider": {
     "brief_model": "sonnet",
     "summary_model": "haiku"

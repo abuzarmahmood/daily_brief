@@ -128,6 +128,45 @@ test_brief_repo_git_pull() {
     return 1
 }
 
+# Test 12: Verify GitHub activity is collected and gated on optional gh/config
+test_github_activity_collected() {
+    if grep -q "GITHUB_LOG_FILE=" "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q "jq -r '.github.username // empty'" "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q '"${GH_BIN}" search prs' "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 12 PASSED: GitHub activity collection is implemented"
+        return 0
+    else
+        echo "✗ Test 12 FAILED: GitHub activity collection is not implemented"
+        return 1
+    fi
+}
+
+# Test 13: Verify gh resolution prefers the anaconda gh (cron's PATH can
+# otherwise resolve to an older system gh lacking `gh search`) and checks
+# auth status explicitly rather than just command -v, so a broken/expired
+# auth degrades gracefully instead of leaking raw CLI errors into the brief.
+test_github_gh_resolution_hardened() {
+    if grep -q 'anaconda3/bin/gh' "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q '"${GH_BIN}" auth status' "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 13 PASSED: gh resolution prefers anaconda gh and checks auth status"
+        return 0
+    else
+        echo "✗ Test 13 FAILED: gh resolution is not hardened against PATH/auth issues"
+        return 1
+    fi
+}
+
+# Test 14: Verify GitHub activity is appended to the brief input file
+test_github_activity_appended() {
+    if grep -q "cat.*GITHUB_LOG_FILE" "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 14 PASSED: GitHub activity is appended to input"
+        return 0
+    else
+        echo "✗ Test 14 FAILED: GitHub activity is not appended to input"
+        return 1
+    fi
+}
+
 # Run all tests
 echo "Running tests for generate_brief.sh changes..."
 echo ""
@@ -145,6 +184,9 @@ test_yesterday_brief_appended || FAILED=1
 test_aider_message_incomplete_items || FAILED=1
 test_aider_message_consider_yesterday || FAILED=1
 test_brief_repo_git_pull || FAILED=1
+test_github_activity_collected || FAILED=1
+test_github_gh_resolution_hardened || FAILED=1
+test_github_activity_appended || FAILED=1
 
 echo ""
 if [ $FAILED -eq 0 ]; then
