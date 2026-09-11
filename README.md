@@ -9,6 +9,7 @@ Automated daily brief generation using:
 - **jrnl** - Journal CLI for accessing journal entries
 - **git** - Version control (usually pre-installed)
 - **aider** - AI assistant for generating daily briefs
+- **gh** (optional) - GitHub CLI for including recent PR/issue activity in the brief. If not installed/authenticated, or if `github.username` isn't set in `config.json`, this section is skipped rather than failing the brief. The script prefers `~/anaconda3/bin/gh` over whatever `gh` cron's PATH resolves to, since an older system-installed `gh` may not support the `gh search` subcommand this relies on.
 
 ## Installation
 
@@ -59,6 +60,13 @@ cd /path/to/your/brief/repo
 git remote add origin https://github.com/yourusername/your-repo.git
 ```
 
+### 6. Configure GitHub activity (optional)
+
+1. Install the [GitHub CLI](https://cli.github.com/) and run `gh auth login`
+2. Set `github.username` in `config.json` to your GitHub username
+
+If `gh` isn't installed or `github.username` isn't set, this section is skipped and the rest of the brief is unaffected.
+
 ## Data Sources
 - **Calendar** (via gcalcli)
   - Personal/Social calendar
@@ -68,6 +76,8 @@ git remote add origin https://github.com/yourusername/your-repo.git
   - Past two weeks of entries
 - **Todo log**
   - Access to GitHub log repository
+- **GitHub activity** (via `gh`, optional)
+  - Pull requests and issues authored in the past two weeks, across every org/repo the configured user has access to
 
 ## Features
 - Hierarchical organization of briefs by year/month/day
@@ -125,11 +135,16 @@ Personal information and paths are stored in `config.json` (not committed to rep
     "log": "/path/to/todo/log/repo",
     "brief_repo": "/path/to/brief/repo"
   },
+  "github": {
+    "username": "your-github-username"
+  },
   "aider": {
     "model": "default"
   }
 }
 ```
+
+The `github` key is optional -- omit it (or leave `username` unset) to skip the GitHub Activity section entirely.
 
 ### AI Model Configuration
 The `aider.model` setting controls which AI model is used to generate daily briefs:
