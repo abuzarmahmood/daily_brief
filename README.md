@@ -8,7 +8,8 @@ Automated daily brief generation using:
 - **gcalcli** - Google Calendar CLI for fetching calendar events
 - **jrnl** - Journal CLI for accessing journal entries
 - **git** - Version control (usually pre-installed)
-- **aider** - AI assistant for generating daily briefs
+- **claude** - [Claude Code CLI](https://docs.claude.com/en/docs/claude-code), run non-interactively (`claude -p`) to generate the daily brief itself
+- **aider** - AI assistant used by `summarize_outputs.py` for the rolling 7-day summary (not used for the brief itself anymore)
 - **gh** (optional) - GitHub CLI for including recent PR/issue activity in the brief. If not installed/authenticated, or if `github.username` isn't set in `config.json`, this section is skipped rather than failing the brief. The script prefers `~/anaconda3/bin/gh` over whatever `gh` cron's PATH resolves to, since an older system-installed `gh` may not support the `gh search` subcommand this relies on.
 
 ## Installation
@@ -19,6 +20,7 @@ Automated daily brief generation using:
 ```bash
 brew install jq gcalcli jrnl git
 pip install aider
+# See https://docs.claude.com/en/docs/claude-code for installing the Claude Code CLI
 ```
 
 **Ubuntu/Debian:**
@@ -26,12 +28,14 @@ pip install aider
 sudo apt-get update
 sudo apt-get install -y jq git
 pip install gcalcli jrnl aider
+# See https://docs.claude.com/en/docs/claude-code for installing the Claude Code CLI
 ```
 
 **Fedora/RHEL:**
 ```bash
 sudo dnf install jq git
 pip install gcalcli jrnl aider
+# See https://docs.claude.com/en/docs/claude-code for installing the Claude Code CLI
 ```
 
 ### 2. Configure Google Calendar
@@ -91,7 +95,7 @@ If `gh` isn't installed or `github.username` isn't set, this section is skipped 
 ```
 
 ### Command-line Options
-- `-m "message"` - Add additional context/message for aider when generating the brief
+- `-m "message"` - Add additional context/message for claude when generating the brief
 - `-d YYYY-MM-DD` - Generate brief for a specific date (defaults to today)
 
 Example:
@@ -118,7 +122,7 @@ Or if using a Python virtual environment:
 0 7 * * 1-5 source /path/to/venv/bin/activate && cd /path/to/brief/repo && /path/to/src/generate_brief.sh >> /tmp/brief_generation.log 2>&1
 ```
 
-**Troubleshooting:** Check logs with `tail -f /tmp/brief_generation.log`. If commands aren't found, verify your PATH includes the directories where `jrnl`, `aider`, `gcalcli`, and `jq` are installed (use `which <command>` to find them).
+**Troubleshooting:** Check logs with `tail -f /tmp/brief_generation.log`. If commands aren't found, verify your PATH includes the directories where `jrnl`, `aider`, `claude`, `gcalcli`, and `jq` are installed (use `which <command>` to find them).
 
 ## Configuration
 Personal information and paths are stored in `config.json` (not committed to repo).
@@ -138,8 +142,11 @@ Personal information and paths are stored in `config.json` (not committed to rep
   "github": {
     "username": "your-github-username"
   },
+  "claude": {
+    "brief_model": "sonnet"
+  },
   "aider": {
-    "model": "default"
+    "summary_model": "haiku"
   }
 }
 ```
@@ -147,16 +154,5 @@ Personal information and paths are stored in `config.json` (not committed to rep
 The `github` key is optional -- omit it (or leave `username` unset) to skip the GitHub Activity section entirely.
 
 ### AI Model Configuration
-The `aider.model` setting controls which AI model is used to generate daily briefs:
-- Set to `"default"` to use aider's default model
-- Set to a specific model name (e.g., `"gpt-4"`, `"claude-3-opus-20240229"`, `"gpt-3.5-turbo"`) to use that model
-- See [aider's model documentation](https://aider.chat/docs/llms.html) for available models and configuration
-
-Example with specific model:
-```json
-{
-  "aider": {
-    "model": "gpt-4"
-  }
-}
-```
+- `claude.brief_model` controls which model generates the daily brief itself (via `claude -p --model ...`). Accepts a Claude Code model alias (`"sonnet"`, `"opus"`, `"fable"`) or a full model name; defaults to `"sonnet"` if unset. See [Claude Code's model docs](https://docs.claude.com/en/docs/claude-code/model-config) for details.
+- `aider.summary_model` controls which model `summarize_outputs.py` and `generate_reflection.sh` use for the rolling 7-day summary and longer-range reflections (still aider-based). Set to `"default"` to use aider's default model, or a specific model name -- see [aider's model documentation](https://aider.chat/docs/llms.html).

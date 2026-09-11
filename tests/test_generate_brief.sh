@@ -167,6 +167,46 @@ test_github_activity_appended() {
     fi
 }
 
+# Test 15: Verify the brief is generated with claude (non-interactive/print
+# mode), not aider -- aider is still required, but only for
+# summarize_outputs.py's rolling 7-day summary now.
+test_brief_uses_claude_not_aider() {
+    if grep -q 'claude -p' "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q '\-\-permission-mode bypassPermissions' "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q '\-\-allowedTools "Read Write"' "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q 'claude.brief_model' "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 15 PASSED: brief is generated via non-interactive claude"
+        return 0
+    else
+        echo "✗ Test 15 FAILED: brief is not generated via non-interactive claude"
+        return 1
+    fi
+}
+
+# Test 16: Verify claude failures are detected even when it exits 0 (API
+# errors, or an empty output file despite a clean exit)
+test_claude_failure_detection() {
+    if grep -qE 'authentication_error\|invalid_api_key' "$GENERATE_BRIEF_SCRIPT" \
+        && grep -q '! -s "\${BRIEF_OUTPUT_FILE}"' "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 16 PASSED: claude API-error and empty-output detection present"
+        return 0
+    else
+        echo "✗ Test 16 FAILED: claude failure detection is missing"
+        return 1
+    fi
+}
+
+# Test 17: Verify claude is checked as a required dependency
+test_claude_dependency_checked() {
+    if grep -q 'command -v claude' "$GENERATE_BRIEF_SCRIPT"; then
+        echo "✓ Test 17 PASSED: claude dependency is checked"
+        return 0
+    else
+        echo "✗ Test 17 FAILED: claude dependency is not checked"
+        return 1
+    fi
+}
+
 # Run all tests
 echo "Running tests for generate_brief.sh changes..."
 echo ""
@@ -187,6 +227,9 @@ test_brief_repo_git_pull || FAILED=1
 test_github_activity_collected || FAILED=1
 test_github_gh_resolution_hardened || FAILED=1
 test_github_activity_appended || FAILED=1
+test_brief_uses_claude_not_aider || FAILED=1
+test_claude_failure_detection || FAILED=1
+test_claude_dependency_checked || FAILED=1
 
 echo ""
 if [ $FAILED -eq 0 ]; then
