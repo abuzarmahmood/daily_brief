@@ -31,9 +31,14 @@ if ! command -v git &> /dev/null; then
     MISSING_DEPS+=("git")
 fi
 
-# Check for aider
+# Check for aider (used by summarize_outputs.py's 7-day summary step)
 if ! command -v aider &> /dev/null; then
     MISSING_DEPS+=("aider")
+fi
+
+# Check for claude (used to generate the brief itself)
+if ! command -v claude &> /dev/null; then
+    MISSING_DEPS+=("claude")
 fi
 
 # Check for python3
@@ -67,8 +72,13 @@ if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
                 echo "     Install: brew install git (macOS) or sudo apt-get install git (Ubuntu/Debian)"
                 ;;
             aider)
-                echo "  ❌ aider - AI assistant for generating daily briefs"
+                echo "  ❌ aider - AI assistant used by summarize_outputs.py for the rolling 7-day summary"
                 echo "     Install: pip install aider-chat"
+                ;;
+            claude)
+                echo "  ❌ claude - Claude Code CLI, used to generate the daily brief itself"
+                echo "     Install: see https://docs.claude.com/en/docs/claude-code"
+                echo "     Setup: Run 'claude auth login' (or set ANTHROPIC_API_KEY) to authenticate"
                 ;;
             python3)
                 echo "  ❌ python3 - Python interpreter (required for summarize_outputs.py)"
@@ -99,7 +109,7 @@ while getopts "m:d:" opt; do
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
-            echo "Usage: $0 [-m \"additional message for aider\"] [-d YYYY-MM-DD]"
+            echo "Usage: $0 [-m \"additional message for claude\"] [-d YYYY-MM-DD]"
             exit 1
             ;;
     esac
@@ -139,7 +149,7 @@ LOG_PATH=$(jq -r '.paths.log' "${CONFIG_FILE}")
 BRIEF_REPO_PATH=$(jq -r '.paths.brief_repo' "${CONFIG_FILE}")
 BRIEF_INPUTS_PATH="${BRIEF_REPO_PATH}/inputs"
 BRIEF_OUTPUTS_PATH="${BRIEF_REPO_PATH}/outputs"
-AIDER_MODEL=$(jq -r '.aider.brief_model' "${CONFIG_FILE}")
+CLAUDE_MODEL=$(jq -r '.claude.brief_model // "sonnet"' "${CONFIG_FILE}")
 
 # Build calendar command arguments
 CALENDAR_ARGS=""
@@ -207,16 +217,19 @@ echo "" >> "${CALENDAR_LOG_FILE}"  # Add empty line for readability
 
 echo "Calendar data collected and saved to ${CALENDAR_LOG_FILE}"
 
-## Collect GitHub activity (PRs and issues authored by the configured user)
-# and save to daily log file. `gh` is optional -- skip gracefully (logging why,
-# never leaking raw CLI error/usage text into the brief input) if it's not
-# installed/authenticated or no github.username is configured.
+## Collect GitHub activity (PRs and issues authored by the configured user),
+# split into a "past 2 days" and "past week" subsection. `gh` is optional --
+# skip gracefully (logging why, never leaking raw CLI error/usage text into
+# the brief input) if it's not installed/authenticated or no github.username
+# is configured.
 #
 # Under cron's minimal PATH, `gh` can resolve to an older system install that
 # doesn't support `gh search` at all (confirmed: /usr/bin/gh on this machine
 # predates it) -- prefer the anaconda gh, which does, and only fall back to
 # PATH resolution if that's missing.
 GITHUB_USERNAME=$(jq -r '.github.username // empty' "${CONFIG_FILE}")
+GITHUB_TWO_DAYS_AGO=$(date -d "${TARGET_DATE} - 2 days" +"%Y-%m-%d")
+GITHUB_ONE_WEEK_AGO=$(date -d "${TARGET_DATE} - 7 days" +"%Y-%m-%d")
 
 GH_BIN=""
 for candidate in "${HOME}/anaconda3/bin/gh" "$(command -v gh 2>/dev/null)"; do
@@ -226,6 +239,43 @@ for candidate in "${HOME}/anaconda3/bin/gh" "$(command -v gh 2>/dev/null)"; do
     fi
 done
 
+# Fetches PRs/issues updated since $1, appending a labeled subsection ($2) to
+# GITHUB_LOG_FILE.
+fetch_github_activity_subsection() {
+    local since="$1"
+    local label="$2"
+    local prs_output prs_exit issues_output issues_exit
+
+    prs_output=$("${GH_BIN}" search prs --author="${GITHUB_USERNAME}" --updated=">=${since}" --limit 50 \
+        --json repository,title,state,url,updatedAt \
+        --jq '.[] | "- [\(.state)] \(.repository.nameWithOwner): \(.title) (\(.url)) - updated \(.updatedAt | split("T")[0])"' 2>&1)
+    prs_exit=$?
+    issues_output=$("${GH_BIN}" search issues --author="${GITHUB_USERNAME}" --updated=">=${since}" --limit 50 \
+        --json repository,title,state,url,updatedAt \
+        --jq '.[] | "- [\(.state)] \(.repository.nameWithOwner): \(.title) (\(.url)) - updated \(.updatedAt | split("T")[0])"' 2>&1)
+    issues_exit=$?
+
+    echo "${label} (since ${since}):" >> "${GITHUB_LOG_FILE}"
+    if [ ${prs_exit} -ne 0 ] && [ ${issues_exit} -ne 0 ]; then
+        echo "  gh queries failed (${GH_BIN}), skipping" >> "${GITHUB_LOG_FILE}"
+    else
+        echo "  Pull requests:" >> "${GITHUB_LOG_FILE}"
+        if [ ${prs_exit} -eq 0 ]; then
+            echo "${prs_output}" >> "${GITHUB_LOG_FILE}"
+        else
+            echo "  (pr query failed, skipped)" >> "${GITHUB_LOG_FILE}"
+        fi
+        echo "" >> "${GITHUB_LOG_FILE}"
+        echo "  Issues:" >> "${GITHUB_LOG_FILE}"
+        if [ ${issues_exit} -eq 0 ]; then
+            echo "${issues_output}" >> "${GITHUB_LOG_FILE}"
+        else
+            echo "  (issue query failed, skipped)" >> "${GITHUB_LOG_FILE}"
+        fi
+    fi
+    echo "" >> "${GITHUB_LOG_FILE}"
+}
+
 echo "=== GitHub activity collected on ${CURRENT_DATE} ===" > "${GITHUB_LOG_FILE}"
 if [ -z "${GITHUB_USERNAME}" ]; then
     echo "No github.username configured in config.json, skipping GitHub activity" >> "${GITHUB_LOG_FILE}"
@@ -234,34 +284,9 @@ elif [ -z "${GH_BIN}" ]; then
 elif ! "${GH_BIN}" auth status &> /dev/null; then
     echo "gh CLI found (${GH_BIN}) but not authenticated -- run 'gh auth login', skipping GitHub activity" >> "${GITHUB_LOG_FILE}"
 else
-    PRS_OUTPUT=$("${GH_BIN}" search prs --author="${GITHUB_USERNAME}" --updated=">=${DATE_TWO_WEEKS_AGO}" --limit 50 \
-        --json repository,title,state,url,updatedAt \
-        --jq '.[] | "- [\(.state)] \(.repository.nameWithOwner): \(.title) (\(.url)) - updated \(.updatedAt | split("T")[0])"' 2>&1)
-    PRS_EXIT=$?
-    ISSUES_OUTPUT=$("${GH_BIN}" search issues --author="${GITHUB_USERNAME}" --updated=">=${DATE_TWO_WEEKS_AGO}" --limit 50 \
-        --json repository,title,state,url,updatedAt \
-        --jq '.[] | "- [\(.state)] \(.repository.nameWithOwner): \(.title) (\(.url)) - updated \(.updatedAt | split("T")[0])"' 2>&1)
-    ISSUES_EXIT=$?
-
-    if [ ${PRS_EXIT} -ne 0 ] && [ ${ISSUES_EXIT} -ne 0 ]; then
-        echo "gh queries failed (${GH_BIN}), skipping GitHub activity" >> "${GITHUB_LOG_FILE}"
-    else
-        echo "Pull requests (updated since ${DATE_TWO_WEEKS_AGO}):" >> "${GITHUB_LOG_FILE}"
-        if [ ${PRS_EXIT} -eq 0 ]; then
-            echo "${PRS_OUTPUT}" >> "${GITHUB_LOG_FILE}"
-        else
-            echo "(pr query failed, skipped)" >> "${GITHUB_LOG_FILE}"
-        fi
-        echo "" >> "${GITHUB_LOG_FILE}"
-        echo "Issues (updated since ${DATE_TWO_WEEKS_AGO}):" >> "${GITHUB_LOG_FILE}"
-        if [ ${ISSUES_EXIT} -eq 0 ]; then
-            echo "${ISSUES_OUTPUT}" >> "${GITHUB_LOG_FILE}"
-        else
-            echo "(issue query failed, skipped)" >> "${GITHUB_LOG_FILE}"
-        fi
-    fi
+    fetch_github_activity_subsection "${GITHUB_TWO_DAYS_AGO}" "Past 2 days"
+    fetch_github_activity_subsection "${GITHUB_ONE_WEEK_AGO}" "Past week"
 fi
-echo "" >> "${GITHUB_LOG_FILE}"  # Add empty line for readability
 
 echo "GitHub activity collected and saved to ${GITHUB_LOG_FILE}"
 
@@ -354,50 +379,62 @@ if [ ! -f "${DEADLINES_FILE}" ]; then
     echo "Created initial deadlines table at ${DEADLINES_FILE}"
 fi
 
-# Generate daily brief using aider
-echo "Generating daily brief with aider..."
+# Generate daily brief using claude (non-interactive/print mode)
+echo "Generating daily brief with claude..."
 
-# Build the aider message
-AIDER_MESSAGE="Based on the provided journal entries, calendar data, and yesterday's incomplete items, please generate a concise daily brief and gameplan for today (${TODAY_DAY_NAME}, ${TODAY}). 
+# Build the claude prompt. Unlike aider (which takes explicit --read/editable
+# file args), claude reads/writes files itself via its Read/Write tools, so
+# the prompt just points it at the relevant absolute paths.
+CLAUDE_MESSAGE="Based on the journal entries, calendar data, GitHub activity, and yesterday's incomplete items in the file at ${BRIEF_INPUT_FILE}, generate a concise daily brief and gameplan for today (${TODAY_DAY_NAME}, ${TODAY}).
 
 The calendar output covers the past 2 weeks through the next 7 days (until ${NEXT_WEEK}).
 
-The GitHub activity data (if present) covers pull requests and issues authored in the past 2 weeks; summarize it briefly rather than listing every item.
+The GitHub activity data (if present) is split into a \"past 2 days\" and \"past week\" subsection (the past week window includes the past 2 days too); summarize each briefly rather than listing every item.
 
-Please follow the style guide in STYLE.md for formatting and content guidelines.
+Follow the style guide at ${STYLE_FILE} for formatting and content guidelines.
 
-Populate the brief output file with a well-formatted GitHub markdown daily brief."
+Write the resulting well-formatted GitHub markdown daily brief directly to the file at ${BRIEF_OUTPUT_FILE}, overwriting its current (empty) contents. Do not print the brief in your response -- only write it to that file."
 
 # Append user message if provided
 if [ -n "${USER_MESSAGE}" ]; then
-    echo "Adding user-provided context to aider prompt..."
-    AIDER_MESSAGE="${AIDER_MESSAGE}
+    echo "Adding user-provided context to claude prompt..."
+    CLAUDE_MESSAGE="${CLAUDE_MESSAGE}
 
 Additional context from user:
 ${USER_MESSAGE}"
 fi
 
-# Use configured model or aider's default
-AIDER_LOG_FILE=$(mktemp)
-if [ "${AIDER_MODEL}" = "default" ]; then
-    echo "Using aider's default model..."
-    aider --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}" 2>&1 | tee "${AIDER_LOG_FILE}"
-else
-    echo "Using configured model: ${AIDER_MODEL}..."
-    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes --read "${STYLE_FILE}" "${BRIEF_INPUT_FILE}" "${BRIEF_OUTPUT_FILE}" 2>&1 | tee "${AIDER_LOG_FILE}"
-fi
-AIDER_EXIT_CODE=${PIPESTATUS[0]}
+# Run non-interactively (-p/--print), restricted to just Read/Write with all
+# permission prompts bypassed -- there's no human to answer prompts under
+# cron, and restricting to Read/Write (no Bash) bounds what an unattended
+# batch run can do regardless.
+echo "Using model: ${CLAUDE_MODEL}..."
+CLAUDE_LOG_FILE=$(mktemp)
+claude -p \
+    --model "${CLAUDE_MODEL}" \
+    --permission-mode bypassPermissions \
+    --allowedTools "Read Write" \
+    --no-session-persistence \
+    "${CLAUDE_MESSAGE}" 2>&1 | tee "${CLAUDE_LOG_FILE}"
+CLAUDE_EXIT_CODE=${PIPESTATUS[0]}
 
-# aider can exit 0 even when the underlying LLM call failed (e.g. missing/invalid
-# API key), so also scan its output for known failure signatures
-if [ ${AIDER_EXIT_CODE} -eq 0 ] && grep -qiE "AuthenticationError|Missing .*API Key|APIConnectionError|RateLimitError|invalid_api_key|litellm\.[A-Za-z]*Error" "${AIDER_LOG_FILE}"; then
-    echo "Error: aider reported an API error despite exiting successfully."
-    echo "Check that ANTHROPIC_API_KEY (or the relevant provider key) is set in the environment."
-    AIDER_EXIT_CODE=1
+# claude can exit 0 even when the underlying API call failed, so also scan its
+# output for known failure signatures
+if [ ${CLAUDE_EXIT_CODE} -eq 0 ] && grep -qiE "authentication_error|invalid_api_key|permission_error|overloaded_error|rate_limit_error|ANTHROPIC_API_KEY" "${CLAUDE_LOG_FILE}"; then
+    echo "Error: claude reported an API error despite exiting successfully."
+    echo "Check that ANTHROPIC_API_KEY (or your configured auth) is valid."
+    CLAUDE_EXIT_CODE=1
 fi
-rm -f "${AIDER_LOG_FILE}"
+rm -f "${CLAUDE_LOG_FILE}"
 
-if [ ${AIDER_EXIT_CODE} -eq 0 ]; then
+# claude should have written directly to BRIEF_OUTPUT_FILE via its Write tool;
+# treat a still-empty output as a failure too
+if [ ${CLAUDE_EXIT_CODE} -eq 0 ] && [ ! -s "${BRIEF_OUTPUT_FILE}" ]; then
+    echo "Error: claude exited successfully but ${BRIEF_OUTPUT_FILE} is empty."
+    CLAUDE_EXIT_CODE=1
+fi
+
+if [ ${CLAUDE_EXIT_CODE} -eq 0 ]; then
     echo "Daily brief generated successfully at ${BRIEF_OUTPUT_FILE}"
     
     # Read deadlines table and substitute {{DEADLINES}} variable in the brief
@@ -437,6 +474,6 @@ if [ ${AIDER_EXIT_CODE} -eq 0 ]; then
         echo "You can manually push later with: cd ${BRIEF_REPO_PATH} && git push origin main"
     fi
 else
-    echo "Error generating daily brief. Check aider output for details."
+    echo "Error generating daily brief. Check claude output for details."
     exit 1
 fi

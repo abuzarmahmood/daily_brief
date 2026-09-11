@@ -13,7 +13,9 @@ The daily brief should be formatted as GitHub markdown with the following sectio
   - **## Ongoing Administrative Tasks** - Regular tasks that need attention but are not time-sensitive
 - **# Review and Context**
     - **## Recent Events (Past 2 Weeks)** - Summary of significant events from the past two weeks
-    - **## GitHub Activity (Past 2 Weeks)** - Brief summary of pull requests and issues authored recently, grouped by repository
+    - **## GitHub Activity** - Brief summary of pull requests and issues authored recently, grouped by repository, with two subsections:
+        - **### Past 2 Days** - very recent activity worth calling out specifically
+        - **### Past Week** - broader context for the week (overlaps with Past 2 Days)
     - **## Notes** - Relevant context and observations from recent journal entries
 
 Use `##` for section headers, `-` for bullet points, and `**bold**` for emphasis.

@@ -13,8 +13,10 @@
   "github": {
     "username": "abuzarmahmood"
   },
+  "claude": {
+    "brief_model": "sonnet"
+  },
   "aider": {
-    "brief_model": "sonnet",
     "summary_model": "haiku"
   }
 }
