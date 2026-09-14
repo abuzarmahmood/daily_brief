@@ -64,7 +64,7 @@ fi
 BRIEF_REPO_PATH=$(jq -r '.paths.brief_repo' "${CONFIG_FILE}")
 BRIEF_INPUTS_PATH="${BRIEF_REPO_PATH}/inputs"
 BRIEF_OUTPUTS_PATH="${BRIEF_REPO_PATH}/outputs"
-AIDER_MODEL=$(jq -r '.aider.summary_model' "${CONFIG_FILE}")
+CLAUDE_MODEL=$(jq -r '.claude.reflection_model // "sonnet"' "${CONFIG_FILE}")
 
 # Create reflections directory if it doesn't exist
 REFLECTIONS_PATH="${BRIEF_REPO_PATH}/reflections"
@@ -135,11 +135,13 @@ echo "Reflection input file created at ${REFLECTION_INPUT_FILE}"
 # Create empty reflection output file
 touch "${REFLECTION_OUTPUT_FILE}"
 
-# Generate reflection using aider
-echo "Generating reflection with aider..."
+# Generate reflection using claude (non-interactive/print mode)
+echo "Generating reflection with claude..."
 
-# Build the aider message
-AIDER_MESSAGE="Based on the provided daily briefs from ${START_DATE} to ${END_DATE}, please generate a thoughtful longer-term reflection.
+# Build the claude prompt. Unlike aider (which takes explicit file args), claude
+# reads/writes files itself via its Read/Write tools, so the prompt just points
+# it at the relevant absolute paths.
+CLAUDE_MESSAGE="Based on the provided daily briefs from ${START_DATE} to ${END_DATE} in the file at ${REFLECTION_INPUT_FILE}, please generate a thoughtful longer-term reflection.
 
 Instructions:
 - Review all the daily briefs from the date range
@@ -159,27 +161,50 @@ Instructions:
   ## Recommendations for Moving Forward
 - Use ## for headers, - for bullet points, **bold** for emphasis
 - Make it thoughtful, actionable, and easy to read
-- Be honest and constructive in the reflection"
+- Be honest and constructive in the reflection
+
+Write the resulting well-formatted GitHub markdown reflection directly to the file at ${REFLECTION_OUTPUT_FILE}, overwriting its current (empty) contents. Do not print the reflection in your response -- only write it to that file."
 
 # Append user message if provided
 if [ -n "${USER_MESSAGE}" ]; then
-    echo "Adding user-provided focus context to aider prompt..."
-    AIDER_MESSAGE="${AIDER_MESSAGE}
+    echo "Adding user-provided focus context to claude prompt..."
+    CLAUDE_MESSAGE="${CLAUDE_MESSAGE}
 
 Additional focus areas requested by user:
 ${USER_MESSAGE}"
 fi
 
-# Use configured model or aider's default
-if [ "${AIDER_MODEL}" = "default" ]; then
-    echo "Using aider's default model..."
-    aider --message "${AIDER_MESSAGE}" --yes "${REFLECTION_INPUT_FILE}" "${REFLECTION_OUTPUT_FILE}"
-else
-    echo "Using configured model: ${AIDER_MODEL}..."
-    aider --model "${AIDER_MODEL}" --message "${AIDER_MESSAGE}" --yes "${REFLECTION_INPUT_FILE}" "${REFLECTION_OUTPUT_FILE}"
+# Run non-interactively (-p/--print), restricted to just Read/Write with all
+# permission prompts bypassed -- there's no human to answer prompts under
+# cron, and restricting to Read/Write (no Bash) bounds what an unattended
+# batch run can do regardless.
+echo "Using model: ${CLAUDE_MODEL}..."
+CLAUDE_LOG_FILE=$(mktemp)
+claude -p \
+    --model "${CLAUDE_MODEL}" \
+    --permission-mode bypassPermissions \
+    --allowedTools "Read Write" \
+    --no-session-persistence \
+    "${CLAUDE_MESSAGE}" 2>&1 | tee "${CLAUDE_LOG_FILE}"
+CLAUDE_EXIT_CODE=${PIPESTATUS[0]}
+
+# claude can exit 0 even when the underlying API call failed, so also scan its
+# output for known failure signatures
+if [ ${CLAUDE_EXIT_CODE} -eq 0 ] && grep -qiE "authentication_error|invalid_api_key|permission_error|overloaded_error|rate_limit_error|ANTHROPIC_API_KEY" "${CLAUDE_LOG_FILE}"; then
+    echo "Error: claude reported an API error despite exiting successfully."
+    echo "Check that ANTHROPIC_API_KEY (or your configured auth) is valid."
+    CLAUDE_EXIT_CODE=1
+fi
+rm -f "${CLAUDE_LOG_FILE}"
+
+# claude should have written directly to REFLECTION_OUTPUT_FILE via its Write
+# tool; treat a still-empty output as a failure too
+if [ ${CLAUDE_EXIT_CODE} -eq 0 ] && [ ! -s "${REFLECTION_OUTPUT_FILE}" ]; then
+    echo "Error: claude exited successfully but ${REFLECTION_OUTPUT_FILE} is empty."
+    CLAUDE_EXIT_CODE=1
 fi
 
-if [ $? -eq 0 ]; then
+if [ ${CLAUDE_EXIT_CODE} -eq 0 ]; then
     echo "Reflection generated successfully at ${REFLECTION_OUTPUT_FILE}"
     
     # Commit and push the generated reflection to GitHub
@@ -200,7 +225,7 @@ if [ $? -eq 0 ]; then
         echo "You can manually push later with: cd ${BRIEF_REPO_PATH} && git push origin main"
     fi
 else
-    echo "Error generating reflection. Check aider output for details."
+    echo "Error generating reflection. Check claude output for details."
     exit 1
 fi
 

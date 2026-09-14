@@ -14,7 +14,8 @@
     "username": "abuzarmahmood"
   },
   "claude": {
-    "brief_model": "sonnet"
+    "brief_model": "sonnet",
+    "reflection_model": "sonnet"
   },
   "aider": {
     "summary_model": "haiku"

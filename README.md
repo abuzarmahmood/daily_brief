@@ -8,8 +8,8 @@ Automated daily brief generation using:
 - **gcalcli** - Google Calendar CLI for fetching calendar events
 - **jrnl** - Journal CLI for accessing journal entries
 - **git** - Version control (usually pre-installed)
-- **claude** - [Claude Code CLI](https://docs.claude.com/en/docs/claude-code), run non-interactively (`claude -p`) to generate the daily brief itself
-- **aider** - AI assistant used by `summarize_outputs.py` for the rolling 7-day summary (not used for the brief itself anymore)
+- **claude** - [Claude Code CLI](https://docs.claude.com/en/docs/claude-code), run non-interactively (`claude -p`) to generate the daily brief and longer-range reflections
+- **aider** - AI assistant used by `summarize_outputs.py` for the rolling 7-day summary (not used for the brief or reflections anymore)
 - **gh** (optional) - GitHub CLI for including recent PR/issue activity in the brief. If not installed/authenticated, or if `github.username` isn't set in `config.json`, this section is skipped rather than failing the brief. The script prefers `~/anaconda3/bin/gh` over whatever `gh` cron's PATH resolves to, since an older system-installed `gh` may not support the `gh search` subcommand this relies on.
 
 ## Installation
@@ -143,7 +143,8 @@ Personal information and paths are stored in `config.json` (not committed to rep
     "username": "your-github-username"
   },
   "claude": {
-    "brief_model": "sonnet"
+    "brief_model": "sonnet",
+    "reflection_model": "sonnet"
   },
   "aider": {
     "summary_model": "haiku"
@@ -155,4 +156,5 @@ The `github` key is optional -- omit it (or leave `username` unset) to skip the 
 
 ### AI Model Configuration
 - `claude.brief_model` controls which model generates the daily brief itself (via `claude -p --model ...`). Accepts a Claude Code model alias (`"sonnet"`, `"opus"`, `"fable"`) or a full model name; defaults to `"sonnet"` if unset. See [Claude Code's model docs](https://docs.claude.com/en/docs/claude-code/model-config) for details.
-- `aider.summary_model` controls which model `summarize_outputs.py` and `generate_reflection.sh` use for the rolling 7-day summary and longer-range reflections (still aider-based). Set to `"default"` to use aider's default model, or a specific model name -- see [aider's model documentation](https://aider.chat/docs/llms.html).
+- `claude.reflection_model` controls which model `generate_reflection.sh` uses to generate longer-range reflections (via `claude -p --model ...`). Same accepted values as `claude.brief_model`; defaults to `"sonnet"` if unset.
+- `aider.summary_model` controls which model `summarize_outputs.py` uses for the rolling 7-day summary (still aider-based). Set to `"default"` to use aider's default model, or a specific model name -- see [aider's model documentation](https://aider.chat/docs/llms.html).
